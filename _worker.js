@@ -256,19 +256,26 @@ function applyOverlay(d, ov) {
     const md = d.modes[m];
     const del = new Set((ov.deleted[m] || []).map(Number));
     const ed = ov.edits[m] || {};
+    const ada = new Set(md.sessions.map((s) => Number(s.sessionNumber)));
+    // sesi yang DITAMBAHKAN admin (nomor belum ada di data game) ikut ditampilkan
+    const tambahan = Object.keys(ed).map(Number).filter((n) => !ada.has(n)).map((n) => ({ ...ed[n], addedByAdmin: true }));
     md.sessions = md.sessions
-      .filter((s) => !del.has(Number(s.sessionNumber)))
       .map((s) => (ed[s.sessionNumber] ? ed[s.sessionNumber] : s))
+      .concat(tambahan)
+      .filter((s) => !del.has(Number(s.sessionNumber)))
       .sort((a, b) => b.sessionNumber - a.sessionNumber);
   }
-  const lb = d.modes.liga.ligaLeaderboard;
-  if (Array.isArray(lb)) {
-    const del = new Set((ov.lbDeleted.liga || []).map(String));
-    const ed = ov.lbEdits.liga || {};
-    d.modes.liga.ligaLeaderboard = lb
-      .filter((e) => !del.has(String(e.userId)))
-      .map((e) => (ed[e.userId] ? { ...e, ...ed[e.userId] } : e));
-  }
+  const lb = Array.isArray(d.modes.liga.ligaLeaderboard) ? d.modes.liga.ligaLeaderboard : [];
+  const lbDel = new Set((ov.lbDeleted.liga || []).map(String));
+  const lbEd = ov.lbEdits.liga || {};
+  const lbAda = new Set(lb.map((e) => String(e.userId)));
+  // pembalap yang DITAMBAHKAN admin ke klasemen liga
+  const lbTambahan = Object.keys(lbEd).filter((uid) => !lbAda.has(uid))
+    .map((uid) => ({ userId: Number(uid), displayName: "", totalPoints: 0, ...lbEd[uid], addedByAdmin: true }));
+  const lbBaru = lb.map((e) => (lbEd[e.userId] ? { ...e, ...lbEd[e.userId] } : e))
+    .concat(lbTambahan)
+    .filter((e) => !lbDel.has(String(e.userId)));
+  d.modes.liga.ligaLeaderboard = lbBaru.length ? lbBaru : (Array.isArray(d.modes.liga.ligaLeaderboard) ? [] : null);
   return d;
 }
 

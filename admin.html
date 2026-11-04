@@ -102,7 +102,43 @@ tr.deleted td{opacity:.5}
 .grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 .toast{position:fixed;top:18px;right:18px;z-index:60;padding:12px 16px;border-radius:12px;box-shadow:0 10px 40px rgba(0,0,0,.5);max-width:360px}
 .log td{font-size:12.5px}
-@media (max-width:640px){.grid2{grid-template-columns:1fr}.wrap{padding:14px 10px}.main{padding:14px}}
+.add-row{margin-top:6px;align-self:flex-start}
+input.cell.dt{min-width:190px}
+/* (2026-11-04) responsif: tablet & HP */
+@media (max-width:900px){
+  .wrap{padding:18px 14px}
+  .tabs{width:100%;overflow-x:auto;flex-wrap:nowrap;scrollbar-width:none}
+  .tabs::-webkit-scrollbar{display:none}
+  .tab{white-space:nowrap}
+}
+@media (max-width:640px){
+  .grid2{grid-template-columns:1fr}.wrap{padding:12px 10px;gap:14px}.main{padding:14px}
+  header.panel{flex-direction:column;align-items:stretch;padding:14px}
+  .brand h1{font-size:19px}.brand img{width:40px;height:40px}
+  .who{justify-content:space-between}
+  .who .btn{flex:1;justify-content:center}
+  .bar{flex-direction:column;align-items:stretch}
+  .bar>div,.bar>.btn{width:100%}
+  .bar .seg{width:100%;justify-content:space-between}.bar .seg button{flex:1}
+  .item{flex-direction:column;align-items:stretch}
+  .item .acts .btn{flex:1;justify-content:center}
+  .modal{padding:16px}
+  .modal .tw table{min-width:540px}
+  .modal .tw table input.cell{min-width:70px}
+  .modal-bg{padding:2vh 8px}
+  .foot .btn{flex:1;justify-content:center}
+  /* tabel jadi kartu bertumpuk */
+  table.stack thead{display:none}
+  table.stack,table.stack tbody,table.stack tr,table.stack td{display:block;width:100%}
+  table.stack tr{padding:10px 12px;border-bottom:1px solid rgba(88,72,50,.5)}
+  table.stack td{border:0;padding:5px 0;display:flex;align-items:center;justify-content:space-between;gap:10px}
+  table.stack td::before{content:attr(data-l);font-size:10.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);flex-shrink:0}
+  table.stack td:not([data-l])::before{content:none}
+  table.stack td>*:not(:first-child){max-width:65%}
+  table.stack input.cell.n{max-width:none}
+  table.stack .acts{width:100%}table.stack .acts .btn{flex:1;justify-content:center}
+  .toast{left:10px;right:10px;max-width:none}
+}
 </style>
 </head>
 <body>
@@ -127,6 +163,7 @@ const P = {
   home:'<path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>',
   refresh:'<path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/>',
   x:'<path d="M18 6 6 18"/><path d="m6 6 12 12"/>',
+  xls:'<path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="m8 13 4 4"/><path d="m12 13-4 4"/>',
 };
 const ico = (n) => `<svg class="ico" viewBox="0 0 24 24" aria-hidden="true">${P[n] || ""}</svg>`;
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
@@ -160,6 +197,106 @@ async function run(fn, okMsg) {
   finally { S.busy = false; }
 }
 
+// ---------- ekspor Excel (.xlsx) tanpa library ----------
+// sheets: [{ name, cols:[{h, w}], rows:[[...]] }]  -> file .xlsx (zip "stored" + CRC32)
+const XLSX = (() => {
+  const enc = new TextEncoder();
+  const CRC = (() => { const t = new Uint32Array(256); for (let n = 0; n < 256; n++) { let c = n; for (let k = 0; k < 8; k++) c = c & 1 ? 0xEDB88320 ^ (c >>> 1) : c >>> 1; t[n] = c >>> 0; } return t; })();
+  const crc32 = (b) => { let c = 0xFFFFFFFF; for (let i = 0; i < b.length; i++) c = CRC[(c ^ b[i]) & 0xFF] ^ (c >>> 8); return (c ^ 0xFFFFFFFF) >>> 0; };
+  const x = (s) => String(s ?? "").replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/g, "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+  const colName = (i) => { let s = ""; i++; while (i > 0) { const m = (i - 1) % 26; s = String.fromCharCode(65 + m) + s; i = Math.floor((i - 1) / 26); } return s; };
+  const safeName = (n, used) => { let s = String(n).replace(/[\[\]:*?/\\]/g, " ").slice(0, 31) || "Sheet"; let t = s, k = 2; while (used.has(t.toLowerCase())) t = s.slice(0, 28) + " " + k++; used.add(t.toLowerCase()); return t; };
+  function sheetXml(sh) {
+    const cols = sh.cols || [];
+    const rows = [cols.map((c) => c.h), ...(sh.rows || [])];
+    const body = rows.map((r, ri) => `<row r="${ri + 1}">${r.map((v, ci) => {
+      const ref = colName(ci) + (ri + 1);
+      if (ri === 0) return `<c r="${ref}" t="inlineStr" s="1"><is><t>${x(v)}</t></is></c>`;
+      if (v === null || v === undefined || v === "") return "";
+      if (typeof v === "number" && isFinite(v)) return `<c r="${ref}"><v>${v}</v></c>`;
+      if (v instanceof Date) return `<c r="${ref}" s="2"><v>${(v.getTime() - v.getTimezoneOffset() * 60000) / 86400000 + 25569}</v></c>`;
+      return `<c r="${ref}" t="inlineStr"><is><t xml:space="preserve">${x(v)}</t></is></c>`;
+    }).join("")}</row>`).join("");
+    const colXml = cols.length ? `<cols>${cols.map((c, i) => `<col min="${i + 1}" max="${i + 1}" width="${c.w || 14}" customWidth="1"/>`).join("")}</cols>` : "";
+    const last = colName(Math.max(cols.length, 1) - 1) + Math.max(rows.length, 1);
+    return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetViews><sheetView workbookViewId="0"><pane ySplit="1" topLeftCell="A2" activePane="bottomLeft" state="frozen"/></sheetView></sheetViews>${colXml}<sheetData>${body}</sheetData>${rows.length > 1 ? `<autoFilter ref="A1:${last}"/>` : ""}</worksheet>`;
+  }
+  function zip(files) {
+    const parts = [], central = []; let off = 0;
+    const u16 = (n) => [n & 255, (n >>> 8) & 255], u32 = (n) => [n & 255, (n >>> 8) & 255, (n >>> 16) & 255, (n >>> 24) & 255];
+    const d = new Date(), dt = ((d.getHours() << 11) | (d.getMinutes() << 5) | (d.getSeconds() >> 1)), dd = (((d.getFullYear() - 1980) << 9) | ((d.getMonth() + 1) << 5) | d.getDate());
+    for (const f of files) {
+      const name = enc.encode(f.name), data = enc.encode(f.data), crc = crc32(data);
+      const head = [...u32(0x04034b50), ...u16(20), ...u16(0x0800), ...u16(0), ...u16(dt), ...u16(dd), ...u32(crc), ...u32(data.length), ...u32(data.length), ...u16(name.length), ...u16(0)];
+      parts.push(new Uint8Array(head), name, data);
+      central.push(new Uint8Array([...u32(0x02014b50), ...u16(20), ...u16(20), ...u16(0x0800), ...u16(0), ...u16(dt), ...u16(dd), ...u32(crc), ...u32(data.length), ...u32(data.length), ...u16(name.length), ...u16(0), ...u16(0), ...u16(0), ...u16(0), ...u32(0), ...u32(off)]), name);
+      off += head.length + name.length + data.length;
+    }
+    const csize = central.reduce((n, a) => n + a.length, 0);
+    const end = new Uint8Array([...u32(0x06054b50), ...u16(0), ...u16(0), ...u16(files.length), ...u16(files.length), ...u32(csize), ...u32(off), ...u16(0)]);
+    return new Blob([...parts, ...central, end], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+  }
+  function build(sheets) {
+    const used = new Set();
+    const named = sheets.map((s) => ({ ...s, name: safeName(s.name, used) }));
+    const files = [
+      { name: "[Content_Types].xml", data: `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/>${named.map((_, i) => `<Override PartName="/xl/worksheets/sheet${i + 1}.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>`).join("")}</Types>` },
+      { name: "_rels/.rels", data: `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>` },
+      { name: "xl/workbook.xml", data: `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets>${named.map((s, i) => `<sheet name="${x(s.name)}" sheetId="${i + 1}" r:id="rId${i + 1}"/>`).join("")}</sheets></workbook>` },
+      { name: "xl/_rels/workbook.xml.rels", data: `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">${named.map((_, i) => `<Relationship Id="rId${i + 1}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet${i + 1}.xml"/>`).join("")}<Relationship Id="rId${named.length + 1}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>` },
+      { name: "xl/styles.xml", data: `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><numFmts count="1"><numFmt numFmtId="164" formatCode="dd mmm yyyy hh:mm"/></numFmts><fonts count="2"><font><sz val="11"/><name val="Calibri"/></font><font><b/><sz val="11"/><color rgb="FF1C160E"/><name val="Calibri"/></font></fonts><fills count="3"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill><fill><patternFill patternType="solid"><fgColor rgb="FFE2BA70"/><bgColor indexed="64"/></patternFill></fill></fills><borders count="1"><border><left/><right/><top/><bottom/><diagonal/></border></borders><cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs><cellXfs count="3"><xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/><xf numFmtId="0" fontId="1" fillId="2" borderId="0" xfId="0" applyFont="1" applyFill="1"/><xf numFmtId="164" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1"/></cellXfs><cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles></styleSheet>` },
+      ...named.map((s, i) => ({ name: `xl/worksheets/sheet${i + 1}.xml`, data: sheetXml(s) })),
+    ];
+    return zip(files);
+  }
+  function download(filename, sheets) {
+    const blob = build(sheets);
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob); a.download = filename;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+  }
+  return { build, download };
+})();
+
+// isi workbook VIGIB Race dari data (modes.liga/normal/team)
+function vigibSheets(data) {
+  const L = { liga: "LIGA", normal: "NORMAL", team: "TEAM" };
+  const d = (u) => (u ? new Date(Number(u) * 1000) : "");
+  const sheets = [];
+  const lb = data.modes && data.modes.liga && data.modes.liga.ligaLeaderboard;
+  if (Array.isArray(lb) && lb.length) {
+    sheets.push({ name: "Klasemen Liga", cols: [{ h: "Rank", w: 7 }, { h: "Nama", w: 26 }, { h: "UserId", w: 14 }, { h: "Total Poin", w: 12 }, { h: "Sesi", w: 8 }],
+      rows: [...lb].sort((a, b) => (Number(b.totalPoints) || 0) - (Number(a.totalPoints) || 0)).map((e, i) => [i + 1, e.displayName || "", Number(e.userId) || "", Number(e.totalPoints) || 0, e.sessionCount != null ? Number(e.sessionCount) : ""]) });
+  }
+  for (const m of ["liga", "normal", "team"]) {
+    const ss = [...((data.modes && data.modes[m] && data.modes[m].sessions) || [])].sort((a, b) => a.sessionNumber - b.sessionNumber);
+    if (!ss.length) continue;
+    const rows = [];
+    for (const s of ss) {
+      const lp = {}; (s.ligaPoints || []).forEach((l) => { lp[l.userId] = l.points; });
+      const ch = [...(s.champions || [])].sort((a, b) => a.rank - b.rank);
+      if (!ch.length) rows.push([s.sessionNumber, d(s.timestamp), "", "(tidak ada yang finish)", "", "", (s.participants || []).length]);
+      ch.forEach((c) => rows.push([s.sessionNumber, d(s.timestamp), Number(c.rank) || "", c.displayName || "", Number(c.userId) || "", m === "liga" ? (lp[c.userId] ?? c.points ?? "") : (c.points ?? ""), (s.participants || []).length]));
+    }
+    sheets.push({ name: `Juara ${L[m]}`, cols: [{ h: "Sesi", w: 7 }, { h: "Tanggal", w: 19 }, { h: "Posisi", w: 8 }, { h: "Nama", w: 26 }, { h: "UserId", w: 14 }, { h: m === "liga" ? "Poin Liga" : "Poin", w: 10 }, { h: "Jumlah Peserta", w: 15 }], rows });
+    const pr = [];
+    ss.forEach((s) => (s.participants || []).forEach((p) => pr.push([s.sessionNumber, d(s.timestamp), p.displayName || "", Number(p.userId) || "", p.team ? p.team.name || "" : ""])));
+    if (pr.length) sheets.push({ name: `Peserta ${L[m]}`, cols: [{ h: "Sesi", w: 7 }, { h: "Tanggal", w: 19 }, { h: "Nama", w: 26 }, { h: "UserId", w: 14 }, { h: "Tim", w: 16 }], rows: pr });
+    if (m === "team") {
+      const tr = [];
+      ss.forEach((s) => [...(s.teamData || [])].sort((a, b) => (b.points || 0) - (a.points || 0)).forEach((t, i) => tr.push([s.sessionNumber, d(s.timestamp), i + 1, t.name || "", Number(t.points) || 0, Number(t.memberCount) || 0])));
+      if (tr.length) sheets.push({ name: "Tim per Sesi", cols: [{ h: "Sesi", w: 7 }, { h: "Tanggal", w: 19 }, { h: "Peringkat", w: 10 }, { h: "Tim", w: 20 }, { h: "Poin", w: 9 }, { h: "Anggota", w: 9 }], rows: tr });
+    }
+  }
+  if (!sheets.length) sheets.push({ name: "VIGIB Race", cols: [{ h: "Info", w: 40 }], rows: [["Belum ada data race"]] });
+  return sheets;
+}
+function vigibExcelName() {
+  const t = new Date(), p = (n) => String(n).padStart(2, "0");
+  return `VIGIB_Race_${t.getFullYear()}-${p(t.getMonth() + 1)}-${p(t.getDate())}_${p(t.getHours())}${p(t.getMinutes())}.xlsx`;
+}
+
 // ---------- data ----------
 async function loadState() {
   const j = await api("/api/admin/state");
@@ -180,16 +317,20 @@ function sessionsView(mode) {
   const raw = (S.raw && S.raw.modes[mode] && S.raw.modes[mode].sessions) || [];
   const del = new Set((S.ov.deleted[mode] || []).map(Number));
   const ed = S.ov.edits[mode] || {};
-  return [...raw].sort((a, b) => b.sessionNumber - a.sessionNumber).map((s) => ({
+  const ada = new Set(raw.map((s) => Number(s.sessionNumber)));
+  const tambahan = Object.keys(ed).map(Number).filter((n) => !ada.has(n)).map((n) => ({ raw: null, cur: ed[n], edited: false, added: true, deleted: del.has(n) }));
+  return [...raw].map((s) => ({
     raw: s, cur: ed[s.sessionNumber] || s, edited: !!ed[s.sessionNumber], deleted: del.has(Number(s.sessionNumber)),
-  }));
+  })).concat(tambahan).sort((a, b) => b.cur.sessionNumber - a.cur.sessionNumber);
 }
 function leaderboardView() {
   const lb = (S.raw && S.raw.modes.liga && S.raw.modes.liga.ligaLeaderboard) || [];
   const del = new Set((S.ov.lbDeleted.liga || []).map(String));
   const ed = S.ov.lbEdits.liga || {};
+  const ada = new Set(lb.map((e) => String(e.userId)));
+  const tambahan = Object.keys(ed).filter((u) => !ada.has(u)).map((u) => ({ raw: null, cur: { userId: Number(u), displayName: "", totalPoints: 0, ...ed[u] }, edited: false, added: true, deleted: del.has(u) }));
   return lb.map((e) => ({ raw: e, cur: ed[e.userId] ? { ...e, ...ed[e.userId] } : e, edited: !!ed[e.userId], deleted: del.has(String(e.userId)) }))
-    .sort((a, b) => (Number(b.cur.totalPoints) || 0) - (Number(a.cur.totalPoints) || 0));
+    .concat(tambahan).sort((a, b) => (Number(b.cur.totalPoints) || 0) - (Number(a.cur.totalPoints) || 0));
 }
 
 // ---------- render ----------
@@ -207,6 +348,7 @@ function render() {
       <span class="role ${S.user.role}">${S.user.role === "super" ? "Super Admin" : "Admin"}</span>
       <b>${esc(S.user.username)}</b>
       <button class="btn sm" data-act="pw">${ico("key")} Ganti Password</button>
+      <button class="btn sm gold" data-act="excel">${ico("xls")} Download Excel</button>
       <a class="btn sm" href="./" target="_blank" rel="noopener">${ico("home")} Website</a>
       <button class="btn sm danger" data-act="logout">${ico("out")} Keluar</button>
     </div>
@@ -283,19 +425,19 @@ const segModes = () => `<div class="seg">${Object.entries(MODES).map(([k, l]) =>
 function sesiBody() {
   if (!S.raw) return `<div class="empty">Memuat…</div>`;
   const list = sessionsView(S.mode);
-  const items = list.map(({ cur, edited, deleted }) => {
+  const items = list.map(({ cur, edited, deleted, added }) => {
     const champs = (cur.champions || []).slice().sort((a, b) => a.rank - b.rank).slice(0, 3).map((c) => `${c.rank}. ${esc(c.displayName)}`).join(" · ");
     return `<div class="item ${deleted ? "deleted" : ""}">
-      <div><div class="t">Sesi #${cur.sessionNumber} ${edited ? `<span class="tag ed">Diedit</span>` : ""} ${deleted ? `<span class="tag del">Dihapus</span>` : ""}</div>
+      <div><div class="t">Sesi #${cur.sessionNumber} ${added ? `<span class="tag ed">Ditambah admin</span>` : ""} ${edited ? `<span class="tag ed">Diedit</span>` : ""} ${deleted ? `<span class="tag del">Dihapus</span>` : ""}</div>
         <div class="s">${fmtDate(cur.timestamp)} · ${(cur.participants || []).length} peserta${champs ? " · " + champs : ""}</div></div>
       <div class="acts">
         ${deleted ? `<button class="btn sm" data-act="restore" data-n="${cur.sessionNumber}">${ico("undo")} Pulihkan</button>`
           : `<button class="btn sm" data-act="edit" data-n="${cur.sessionNumber}">${ico("edit")} Edit</button>
              ${edited ? `<button class="btn sm ghost" data-act="revert" data-n="${cur.sessionNumber}">${ico("undo")} Batalkan Edit</button>` : ""}
-             <button class="btn sm danger" data-act="del" data-n="${cur.sessionNumber}">${ico("trash")} Hapus</button>`}
+             <button class="btn sm danger" data-act="${added ? "deladded" : "del"}" data-n="${cur.sessionNumber}">${ico("trash")} Hapus</button>`}
       </div></div>`;
   }).join("");
-  return `<div class="bar"><h2>Data Sesi</h2><div style="display:flex;gap:8px;flex-wrap:wrap">${segModes()}<button class="btn sm" data-act="reload">${ico("refresh")} Muat ulang</button></div></div>
+  return `<div class="bar"><h2>Data Sesi</h2><div style="display:flex;gap:8px;flex-wrap:wrap">${segModes()}<button class="btn sm gold" data-act="newsess">${ico("plus")} Tambah Sesi</button><button class="btn sm" data-act="reload">${ico("refresh")} Muat ulang</button></div></div>
     <p class="muted" style="margin:-6px 0 14px;font-size:12.5px">Perubahan tampil di website saat itu juga. Data asli dari game tetap disimpan, jadi edit dan hapus bisa dibatalkan kapan saja.</p>
     <div class="list">${items || `<div class="empty">Belum ada sesi ${MODES[S.mode]}.</div>`}</div>`;
 }
@@ -303,26 +445,26 @@ function sesiBody() {
 function klasemenBody() {
   if (!S.raw) return `<div class="empty">Memuat…</div>`;
   const rows = leaderboardView();
-  const body = rows.map(({ cur, edited, deleted }, i) => `<tr class="${deleted ? "deleted" : ""}" data-uid="${esc(cur.userId)}">
-      <td>${deleted ? "-" : i + 1}</td>
-      <td><input class="cell" data-f="displayName" value="${esc(cur.displayName)}" ${deleted ? "disabled" : ""} maxlength="64"><div class="muted" style="font-size:11px;margin-top:3px">ID ${esc(cur.userId)} ${edited ? `<span class="tag ed">Diedit</span>` : ""} ${deleted ? `<span class="tag del">Dihapus</span>` : ""}</div></td>
-      <td><input class="cell n" data-f="totalPoints" type="number" step="any" value="${esc(cur.totalPoints)}" ${deleted ? "disabled" : ""}></td>
-      <td><input class="cell n" data-f="sessionCount" type="number" value="${esc(cur.sessionCount ?? "")}" ${deleted ? "disabled" : ""}></td>
+  const body = rows.map(({ cur, edited, deleted, added }, i) => `<tr class="${deleted ? "deleted" : ""}" data-uid="${esc(cur.userId)}" ${added ? 'data-added="1"' : ""}>
+      <td data-l="Rank">${deleted ? "-" : i + 1}</td>
+      <td data-l="Pembalap"><div style="flex:1"><input class="cell" data-f="displayName" value="${esc(cur.displayName)}" ${deleted ? "disabled" : ""} maxlength="64"><div class="muted" style="font-size:11px;margin-top:3px">ID ${esc(cur.userId)} ${added ? `<span class="tag ed">Ditambah admin</span>` : ""} ${edited ? `<span class="tag ed">Diedit</span>` : ""} ${deleted ? `<span class="tag del">Dihapus</span>` : ""}</div></div></td>
+      <td data-l="Total Poin"><input class="cell n" data-f="totalPoints" type="number" step="any" value="${esc(cur.totalPoints)}" ${deleted ? "disabled" : ""}></td>
+      <td data-l="Sesi"><input class="cell n" data-f="sessionCount" type="number" value="${esc(cur.sessionCount ?? "")}" ${deleted ? "disabled" : ""}></td>
       <td><div class="acts">${deleted ? `<button class="btn sm" data-act="lbrestore">${ico("undo")} Pulihkan</button>`
         : `<button class="btn sm gold" data-act="lbsave">Simpan</button>${edited ? `<button class="btn sm ghost" data-act="lbrevert">${ico("undo")}</button>` : ""}<button class="btn sm danger" data-act="lbdel">${ico("trash")}</button>`}</div></td>
     </tr>`).join("");
-  return `<div class="bar"><h2>Klasemen Liga</h2><button class="btn sm" data-act="reload">${ico("refresh")} Muat ulang</button></div>
+  return `<div class="bar"><h2>Klasemen Liga</h2><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn sm gold" data-act="newlb">${ico("plus")} Tambah Pembalap</button><button class="btn sm" data-act="reload">${ico("refresh")} Muat ulang</button></div></div>
     <p class="muted" style="margin:-6px 0 14px;font-size:12.5px">Klasemen akumulatif yang dikirim dari game. Ubah nama atau poin lalu tekan Simpan.</p>
-    ${rows.length ? `<div class="tw"><table><thead><tr><th>#</th><th>Pembalap</th><th>Total Poin</th><th>Sesi</th><th></th></tr></thead><tbody>${body}</tbody></table></div>`
-      : `<div class="empty">Belum ada klasemen liga. Kirim dari mode Liga di dalam game.</div>`}`;
+    ${rows.length ? `<div class="tw"><table class="stack"><thead><tr><th>#</th><th>Pembalap</th><th>Total Poin</th><th>Sesi</th><th></th></tr></thead><tbody>${body}</tbody></table></div>`
+      : `<div class="empty">Belum ada klasemen liga. Kirim dari mode Liga di dalam game, atau tekan Tambah Pembalap.</div>`}`;
 }
 
 function akunBody() {
   if (!S.accounts) return `<div class="empty">Memuat…</div>`;
   const rows = S.accounts.map((a) => `<tr>
-    <td><b>${esc(a.username)}</b></td>
-    <td><span class="role ${a.role}">${a.role === "super" ? "Super Admin" : "Admin"}</span></td>
-    <td class="muted">${fmtMs(a.createdAt)}<div style="font-size:11px">oleh ${esc(a.createdBy || "-")}</div></td>
+    <td data-l="Username"><b>${esc(a.username)}</b></td>
+    <td data-l="Peran"><span class="role ${a.role}">${a.role === "super" ? "Super Admin" : "Admin"}</span></td>
+    <td class="muted" data-l="Dibuat"><div>${fmtMs(a.createdAt)}<div style="font-size:11px">oleh ${esc(a.createdBy || "-")}</div></div></td>
     <td><div class="acts">
       ${a.role === "super" ? `<span class="muted" style="font-size:12px">Ganti lewat tombol "Ganti Password"</span>`
         : `<button class="btn sm" data-act="reset" data-u="${esc(a.username)}">${ico("key")} Reset Password</button>
@@ -337,14 +479,14 @@ function akunBody() {
       <div class="acts"><button class="btn sm gold" data-act="gate">${ico("key")} ${g && g.active ? "Ganti Kode" : "Pasang Kode"}</button></div>
     </div>`;
   return `<div class="bar"><h2>Akun Admin</h2><button class="btn gold" data-act="newacct">${ico("plus")} Buat Akun Admin</button></div>
-    <div class="tw"><table><thead><tr><th>Username</th><th>Peran</th><th>Dibuat</th><th></th></tr></thead><tbody>${rows}</tbody></table></div>${gateCard}`;
+    <div class="tw"><table class="stack"><thead><tr><th>Username</th><th>Peran</th><th>Dibuat</th><th></th></tr></thead><tbody>${rows}</tbody></table></div>${gateCard}`;
 }
 
 function logBody() {
   if (!S.log) return `<div class="empty">Memuat…</div>`;
-  const rows = S.log.map((l) => `<tr><td class="muted" style="white-space:nowrap">${fmtMs(l.t)}</td><td><b>${esc(l.user)}</b></td><td>${esc(l.action)}</td><td>${esc(l.detail)}</td></tr>`).join("");
+  const rows = S.log.map((l) => `<tr><td class="muted" style="white-space:nowrap" data-l="Waktu">${fmtMs(l.t)}</td><td data-l="Akun"><b>${esc(l.user)}</b></td><td data-l="Jenis">${esc(l.action)}</td><td data-l="Detail"><span>${esc(l.detail)}</span></td></tr>`).join("");
   return `<div class="bar"><h2>Log Aktivitas</h2><button class="btn sm" data-act="reload">${ico("refresh")} Muat ulang</button></div>
-    ${rows ? `<div class="tw log"><table><thead><tr><th>Waktu</th><th>Akun</th><th>Jenis</th><th>Detail</th></tr></thead><tbody>${rows}</tbody></table></div>` : `<div class="empty">Belum ada aktivitas.</div>`}`;
+    ${rows ? `<div class="tw log"><table class="stack"><thead><tr><th>Waktu</th><th>Akun</th><th>Jenis</th><th>Detail</th></tr></thead><tbody>${rows}</tbody></table></div>` : `<div class="empty">Belum ada aktivitas.</div>`}`;
 }
 
 // ---------- modal ----------
@@ -368,37 +510,58 @@ function confirmBox(title, text, okLabel, danger) {
 }
 
 function rowsEditor(key, title, rows, cols) {
+  ROW_TPL[key] = cols;
   const tr = (r) => `<tr>${cols.map((c) => `<td><input class="cell ${c.num ? "n" : ""}" data-f="${c.f}" ${c.num ? 'type="number" step="any"' : ""} value="${esc(r[c.f] ?? "")}" ${c.ro ? "readonly" : ""}></td>`).join("")}
     <td><button class="btn sm ghost" data-rm title="Hapus baris">${ico("x")}</button></td></tr>`;
   return `<div class="sec" data-sec="${key}"><h4>${title}</h4>
     <div class="tw"><table><thead><tr>${cols.map((c) => `<th>${c.l}</th>`).join("")}<th></th></tr></thead>
-    <tbody>${rows.map(tr).join("") || `<tr class="none"><td colspan="${cols.length + 1}" class="muted">Kosong</td></tr>`}</tbody></table></div></div>`;
+    <tbody>${rows.map(tr).join("") || `<tr class="none"><td colspan="${cols.length + 1}" class="muted">Kosong</td></tr>`}</tbody></table></div>
+    <button type="button" class="btn sm add-row" data-add="${key}">${ico("plus")} Tambah baris</button></div>`;
 }
+const ROW_TPL = {};
+function rowHtml(key) {
+  const cols = ROW_TPL[key] || [];
+  return `<tr data-new="1">${cols.map((c) => `<td><input class="cell ${c.num ? "n" : ""}" data-f="${c.f}" ${c.num ? 'type="number" step="any"' : ""} value=""></td>`).join("")}
+    <td><button class="btn sm ghost" data-rm title="Hapus baris">${ico("x")}</button></td></tr>`;
+}
+const toLocalInput = (unix) => { if (!unix) return ""; const d = new Date(unix * 1000); const p = (n) => String(n).padStart(2, "0"); return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}`; };
 const COLS = {
   champions: [{ f: "rank", l: "Posisi", num: 1 }, { f: "displayName", l: "Nama" }, { f: "points", l: "Poin", num: 1 }, { f: "userId", l: "UserId", num: 1 }],
   ligaPoints: [{ f: "displayName", l: "Nama" }, { f: "points", l: "Poin Liga", num: 1 }, { f: "userId", l: "UserId", num: 1 }],
   participants: [{ f: "displayName", l: "Nama" }, { f: "userId", l: "UserId", num: 1 }],
   teamData: [{ f: "name", l: "Tim" }, { f: "points", l: "Poin", num: 1 }, { f: "memberCount", l: "Anggota", num: 1 }],
 };
-function editSession(n) {
-  const v = sessionsView(S.mode).find((x) => Number(x.cur.sessionNumber) === Number(n));
+function editSession(n, baru) {
+  let v = sessionsView(S.mode).find((x) => Number(x.cur.sessionNumber) === Number(n));
+  if (!v && baru) v = { cur: { sessionNumber: Number(n), timestamp: Math.floor(Date.now() / 1000), mode: S.mode, champions: [], participants: [], ...(S.mode === "liga" ? { ligaPoints: [] } : {}), ...(S.mode === "team" ? { teamData: [] } : {}) }, edited: false };
   if (!v) return;
   const s = JSON.parse(JSON.stringify(v.cur));
   const secs = [rowsEditor("champions", "Juara / Finish", s.champions || [], COLS.champions)];
   if (S.mode === "liga" || s.ligaPoints) secs.push(rowsEditor("ligaPoints", "Poin Liga Sesi Ini", s.ligaPoints || [], COLS.ligaPoints));
   if (S.mode === "team" || s.teamData) secs.push(rowsEditor("teamData", "Tim", s.teamData || [], COLS.teamData));
   secs.push(rowsEditor("participants", "Peserta", s.participants || [], COLS.participants));
-  openModal(`<h3>Edit Sesi ${MODES[S.mode]} #${s.sessionNumber}</h3>
-    <div class="muted" style="font-size:12.5px;margin-top:-8px">${fmtDate(s.timestamp)}${v.edited ? " · sudah pernah diedit" : ""}</div>
+  openModal(`<h3>${baru ? "Tambah" : "Edit"} Sesi ${MODES[S.mode]} #${s.sessionNumber}</h3>
+    <div class="muted" style="font-size:12.5px;margin-top:-8px">${baru ? "Sesi baru dibuat dari panel admin" : fmtDate(s.timestamp)}${v.edited ? " · sudah pernah diedit" : ""}</div>
+    <div class="grid2"><div><label class="lb" for="sessDate">Tanggal & jam</label><input class="cell dt" id="sessDate" type="datetime-local" value="${toLocalInput(s.timestamp)}"></div></div>
     ${secs.join("")}
     <div class="foot"><button class="btn" data-close>Batal</button><button class="btn gold" id="saveSess">Simpan Perubahan</button></div>`, (m) => {
-    m.querySelectorAll("[data-rm]").forEach((b) => b.addEventListener("click", () => b.closest("tr").remove()));
+    m.addEventListener("click", (e) => {
+      const rm = e.target.closest("[data-rm]");
+      if (rm) { rm.closest("tr").remove(); return; }
+      const add = e.target.closest("[data-add]");
+      if (add) {
+        const tb = m.querySelector(`[data-sec="${add.dataset.add}"] tbody`);
+        const none = tb.querySelector("tr.none"); if (none) none.remove();
+        tb.insertAdjacentHTML("beforeend", rowHtml(add.dataset.add));
+        const inp = tb.lastElementChild.querySelector("input"); if (inp) inp.focus();
+      }
+    });
     $("#saveSess", m).addEventListener("click", () => {
       const read = (key) => {
         const sec = m.querySelector(`[data-sec="${key}"]`);
         if (!sec) return undefined;
         return [...sec.querySelectorAll("tbody tr:not(.none)")].map((tr) => {
-          const orig = ((s[key] || [])[Number(tr.dataset.i)]) || {};
+          const orig = tr.dataset.new ? {} : (((s[key] || [])[Number(tr.dataset.i)]) || {});
           const o = { ...orig };
           tr.querySelectorAll("[data-f]").forEach((inp) => {
             const f = inp.dataset.f;
@@ -408,15 +571,43 @@ function editSession(n) {
         });
       };
       const out = { ...s };
+      const dv = $("#sessDate", m).value;
+      if (dv) { const t = new Date(dv).getTime(); if (!isNaN(t)) out.timestamp = Math.floor(t / 1000); }
       ["champions", "ligaPoints", "teamData", "participants"].forEach((k) => { const r = read(k); if (r !== undefined) out[k] = r; });
       run(async () => {
         const j = await api("/api/admin/session/save", { mode: S.mode, session: out });
         S.ov = j.overlay; closeModal(); render();
-      }, `Sesi #${s.sessionNumber} disimpan`);
+      }, `Sesi #${s.sessionNumber} ${baru ? "ditambahkan" : "disimpan"}`);
     });
   });
   // tandai indeks asli tiap baris supaya data tambahan (team, members) tidak hilang saat baris lain dihapus
   $("#modal").querySelectorAll("[data-sec]").forEach((sec) => sec.querySelectorAll("tbody tr:not(.none)").forEach((tr, i) => { tr.dataset.i = i; }));
+}
+
+function lbAddForm() {
+  openModal(`<h3>Tambah Pembalap ke Klasemen Liga</h3>
+    <form id="lbf" class="sec" autocomplete="off">
+      <div><label class="lb" for="lu">UserId Roblox</label><input class="in" id="lu" type="number" min="1" required></div>
+      <div><label class="lb" for="ln">Nama tampil</label><input class="in" id="ln" maxlength="64" required></div>
+      <div class="grid2"><div><label class="lb" for="lp">Total Poin</label><input class="in" id="lp" type="number" step="any" value="0" required></div>
+        <div><label class="lb" for="ls">Sesi (opsional)</label><input class="in" id="ls" type="number" min="0"></div></div>
+      <div class="foot"><button type="button" class="btn" data-close>Batal</button><button class="btn gold" type="submit">Tambah</button></div>
+    </form>`, (m) => {
+    $("#lbf", m).addEventListener("submit", (e) => {
+      e.preventDefault();
+      const body = { userId: Number($("#lu", m).value), displayName: $("#ln", m).value.trim(), totalPoints: Number($("#lp", m).value) };
+      if ($("#ls", m).value !== "") body.sessionCount = Number($("#ls", m).value);
+      run(async () => { const j = await api("/api/admin/leaderboard/save", body); S.ov = j.overlay; closeModal(); render(); }, "Pembalap ditambahkan");
+    });
+  }, "sm");
+}
+
+async function downloadExcel() {
+  // data yang sama dengan website (data game + perubahan admin)
+  const r = await fetch("/api/data?t=" + Date.now(), { cache: "no-store", credentials: "same-origin" });
+  if (!r.ok) throw new Error("Gagal mengambil data (" + r.status + ")");
+  const d = await r.json();
+  XLSX.download(vigibExcelName(), vigibSheets(d));
 }
 
 function accountForm(mode, username) {
@@ -503,6 +694,18 @@ async function onAct(b) {
     case "pw": passwordForm(); break;
     case "reload": run(async () => { await refreshTab(); render(); }, "Data dimuat ulang"); break;
     case "edit": editSession(n); break;
+    case "newsess": {
+      const all = sessionsView(S.mode).map((x) => Number(x.cur.sessionNumber));
+      const deletedNums = (S.ov.deleted[S.mode] || []).map(Number);
+      editSession(Math.max(0, ...all, ...deletedNums) + 1, true);
+      break;
+    }
+    case "deladded":
+      if (await confirmBox(`Hapus sesi #${n}?`, "Sesi ini ditambahkan dari panel admin dan akan dihapus permanen.", "Hapus", true))
+        post("/api/admin/session/revert", { mode: S.mode, sessionNumber: Number(n) }, `Sesi #${n} dihapus`);
+      break;
+    case "newlb": lbAddForm(); break;
+    case "excel": run(downloadExcel, "File Excel diunduh"); break;
     case "del":
       if (await confirmBox(`Hapus sesi #${n}?`, "Sesi ini akan disembunyikan dari website. Bisa dipulihkan kembali dari panel ini.", "Hapus", true))
         post("/api/admin/session/delete", { mode: S.mode, sessionNumber: Number(n) }, `Sesi #${n} dihapus`);
@@ -521,6 +724,11 @@ async function onAct(b) {
     }
     case "lbrevert": post("/api/admin/leaderboard/revert", { userId: Number(uid) }, "Edit dibatalkan"); break;
     case "lbdel":
+      if (tr && tr.dataset.added) {
+        if (await confirmBox("Hapus pembalap ini?", "Pembalap ini ditambahkan dari panel admin dan akan dihapus permanen.", "Hapus", true))
+          post("/api/admin/leaderboard/revert", { userId: Number(uid) }, "Dihapus dari klasemen");
+        break;
+      }
       if (await confirmBox("Hapus dari klasemen?", "Pembalap ini disembunyikan dari klasemen liga. Bisa dipulihkan.", "Hapus", true))
         post("/api/admin/leaderboard/delete", { userId: Number(uid) }, "Dihapus dari klasemen");
       break;

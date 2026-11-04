@@ -163,24 +163,67 @@ footer img{width:20px;height:20px}
 @keyframes tin{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:none}}
 #confetti{position:fixed;inset:0;pointer-events:none;z-index:60}
 
+.xbtn{display:inline-flex;align-items:center;gap:7px;padding:8px 14px;border-radius:11px;border:0;cursor:pointer;font-family:var(--sans);font-weight:700;font-size:12.5px;white-space:nowrap}
+.xbtn:hover{filter:brightness(1.06)}
+@media (min-width:1500px){ .wrap{max-width:1400px} }
+@media (max-width:1100px){ .stats{gap:12px} .stat .v{font-size:16px} }
 @media (max-width:900px){
   .stats{grid-template-columns:repeat(2,1fr)}
   .champs{grid-template-columns:repeat(2,1fr)}
+  header.panel{justify-content:center;text-align:center}
+  .brand{justify-content:center}
+  .tabs{width:100%;justify-content:center}
 }
 @media (max-width:600px){
-  .wrap{padding:14px 12px;gap:16px}
-  header.panel{padding:16px;justify-content:center}
-  .brand img{width:52px;height:52px}
-  .brand h1{font-size:22px}
-  .tab{padding:7px 10px;font-size:12px}
-  .mode{padding:8px 12px;font-size:11px;letter-spacing:.08em}
-  .main{padding:16px}
-  .stat{padding:12px}
-  .stat .v{font-size:15px}
-  .pcol{width:96px}
-  .podium{gap:10px}
+  .wrap{padding:12px 10px;gap:14px}
+  header.panel{padding:14px}
+  .brand{gap:10px}
+  .brand img{width:46px;height:46px}
+  .brand h1{font-size:21px}
+  .brand p{font-size:12px}
+  .tabs{display:grid;grid-template-columns:repeat(3,1fr)}
+  .tab{padding:8px 6px;font-size:12px;justify-content:center}
+  .modes .panel{width:100%;display:grid;grid-template-columns:repeat(3,1fr)}
+  .mode{padding:9px 4px;font-size:11px;letter-spacing:.06em;justify-content:center;gap:5px}
+  .mode .ico{display:none}
+  .main{padding:14px 12px;gap:14px}
+  .main-head{flex-direction:column;align-items:flex-start;gap:4px}
+  .stats{gap:10px}
+  .stat{padding:11px}
+  .stat .v{font-size:14px}
+  .stat .badge{width:32px;height:32px}.stat .badge .ico{width:16px;height:16px}
+  .pcol{width:30%;max-width:110px}
+  .podium{gap:8px}
   .champs{grid-template-columns:1fr}
-  th,td{padding:11px 10px}
+  .filters{flex-direction:column;align-items:stretch}
+  .search{max-width:none;min-width:0}
+  .ctrl{flex-wrap:wrap}
+  .ctrl select{flex:1}
+  .xbtn{flex-basis:100%;justify-content:center;padding:10px}
+  th,td{padding:10px 8px}
+  table{font-size:13px}
+  .hm{display:none}
+  th:first-child,td:first-child{width:40px;padding-left:8px;padding-right:4px}
+  td.l{max-width:0;width:100%}
+  .who-cell>div{min-width:0}
+  .who-cell .nm{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .who-cell .av{width:28px!important;height:28px!important}
+  th{white-space:normal;font-size:10px;letter-spacing:.04em;line-height:1.3}
+  th:not(.l):not(:first-child),td:not(.l):not(:first-child){width:1%;white-space:nowrap}
+  .pts small{display:none}
+  .who-cell{gap:8px}
+  .who-cell .sub{display:none}
+  .pts{font-size:13px;padding:3px 8px}
+  td.r,th.r{padding-right:10px}
+  .sess{padding:12px}
+  footer.panel{flex-direction:column;text-align:center}
+  footer .f{flex-wrap:wrap;justify-content:center}
+  .toast{left:10px;right:10px}
+}
+@media (max-width:380px){
+  .stats{grid-template-columns:1fr}
+  .brand h1{font-size:18px}
+  .rank{width:24px;height:24px;font-size:11px}
 }
 </style>
 </head>
@@ -216,6 +259,7 @@ const P = {
   down: '<path d="M12 5v14"/><path d="m19 12-7 7-7-7"/>',
   calendar: '<rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/>',
   sparkles: '<path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3Z"/>',
+  xls: '<path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="m8 13 4 4"/><path d="m12 13-4 4"/>',
   alert: '<path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" x2="12" y1="9" y2="13"/><line x1="12" x2="12.01" y1="17" y2="17"/>',
 };
 const ico = (n, cls = "") => `<svg class="ico ${cls}" viewBox="0 0 24 24" aria-hidden="true">${P[n] || ""}</svg>`;
@@ -236,6 +280,106 @@ const timeAgo = (ms) => {
   if (s < 86400) return Math.floor(s / 3600) + " jam lalu";
   return Math.floor(s / 86400) + " hari lalu";
 };
+
+// ---------- ekspor Excel (.xlsx) tanpa library ----------
+// sheets: [{ name, cols:[{h, w}], rows:[[...]] }]  -> file .xlsx (zip "stored" + CRC32)
+const XLSX = (() => {
+  const enc = new TextEncoder();
+  const CRC = (() => { const t = new Uint32Array(256); for (let n = 0; n < 256; n++) { let c = n; for (let k = 0; k < 8; k++) c = c & 1 ? 0xEDB88320 ^ (c >>> 1) : c >>> 1; t[n] = c >>> 0; } return t; })();
+  const crc32 = (b) => { let c = 0xFFFFFFFF; for (let i = 0; i < b.length; i++) c = CRC[(c ^ b[i]) & 0xFF] ^ (c >>> 8); return (c ^ 0xFFFFFFFF) >>> 0; };
+  const x = (s) => String(s ?? "").replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/g, "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+  const colName = (i) => { let s = ""; i++; while (i > 0) { const m = (i - 1) % 26; s = String.fromCharCode(65 + m) + s; i = Math.floor((i - 1) / 26); } return s; };
+  const safeName = (n, used) => { let s = String(n).replace(/[\[\]:*?/\\]/g, " ").slice(0, 31) || "Sheet"; let t = s, k = 2; while (used.has(t.toLowerCase())) t = s.slice(0, 28) + " " + k++; used.add(t.toLowerCase()); return t; };
+  function sheetXml(sh) {
+    const cols = sh.cols || [];
+    const rows = [cols.map((c) => c.h), ...(sh.rows || [])];
+    const body = rows.map((r, ri) => `<row r="${ri + 1}">${r.map((v, ci) => {
+      const ref = colName(ci) + (ri + 1);
+      if (ri === 0) return `<c r="${ref}" t="inlineStr" s="1"><is><t>${x(v)}</t></is></c>`;
+      if (v === null || v === undefined || v === "") return "";
+      if (typeof v === "number" && isFinite(v)) return `<c r="${ref}"><v>${v}</v></c>`;
+      if (v instanceof Date) return `<c r="${ref}" s="2"><v>${(v.getTime() - v.getTimezoneOffset() * 60000) / 86400000 + 25569}</v></c>`;
+      return `<c r="${ref}" t="inlineStr"><is><t xml:space="preserve">${x(v)}</t></is></c>`;
+    }).join("")}</row>`).join("");
+    const colXml = cols.length ? `<cols>${cols.map((c, i) => `<col min="${i + 1}" max="${i + 1}" width="${c.w || 14}" customWidth="1"/>`).join("")}</cols>` : "";
+    const last = colName(Math.max(cols.length, 1) - 1) + Math.max(rows.length, 1);
+    return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetViews><sheetView workbookViewId="0"><pane ySplit="1" topLeftCell="A2" activePane="bottomLeft" state="frozen"/></sheetView></sheetViews>${colXml}<sheetData>${body}</sheetData>${rows.length > 1 ? `<autoFilter ref="A1:${last}"/>` : ""}</worksheet>`;
+  }
+  function zip(files) {
+    const parts = [], central = []; let off = 0;
+    const u16 = (n) => [n & 255, (n >>> 8) & 255], u32 = (n) => [n & 255, (n >>> 8) & 255, (n >>> 16) & 255, (n >>> 24) & 255];
+    const d = new Date(), dt = ((d.getHours() << 11) | (d.getMinutes() << 5) | (d.getSeconds() >> 1)), dd = (((d.getFullYear() - 1980) << 9) | ((d.getMonth() + 1) << 5) | d.getDate());
+    for (const f of files) {
+      const name = enc.encode(f.name), data = enc.encode(f.data), crc = crc32(data);
+      const head = [...u32(0x04034b50), ...u16(20), ...u16(0x0800), ...u16(0), ...u16(dt), ...u16(dd), ...u32(crc), ...u32(data.length), ...u32(data.length), ...u16(name.length), ...u16(0)];
+      parts.push(new Uint8Array(head), name, data);
+      central.push(new Uint8Array([...u32(0x02014b50), ...u16(20), ...u16(20), ...u16(0x0800), ...u16(0), ...u16(dt), ...u16(dd), ...u32(crc), ...u32(data.length), ...u32(data.length), ...u16(name.length), ...u16(0), ...u16(0), ...u16(0), ...u16(0), ...u32(0), ...u32(off)]), name);
+      off += head.length + name.length + data.length;
+    }
+    const csize = central.reduce((n, a) => n + a.length, 0);
+    const end = new Uint8Array([...u32(0x06054b50), ...u16(0), ...u16(0), ...u16(files.length), ...u16(files.length), ...u32(csize), ...u32(off), ...u16(0)]);
+    return new Blob([...parts, ...central, end], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+  }
+  function build(sheets) {
+    const used = new Set();
+    const named = sheets.map((s) => ({ ...s, name: safeName(s.name, used) }));
+    const files = [
+      { name: "[Content_Types].xml", data: `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/>${named.map((_, i) => `<Override PartName="/xl/worksheets/sheet${i + 1}.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>`).join("")}</Types>` },
+      { name: "_rels/.rels", data: `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>` },
+      { name: "xl/workbook.xml", data: `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets>${named.map((s, i) => `<sheet name="${x(s.name)}" sheetId="${i + 1}" r:id="rId${i + 1}"/>`).join("")}</sheets></workbook>` },
+      { name: "xl/_rels/workbook.xml.rels", data: `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">${named.map((_, i) => `<Relationship Id="rId${i + 1}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet${i + 1}.xml"/>`).join("")}<Relationship Id="rId${named.length + 1}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>` },
+      { name: "xl/styles.xml", data: `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><numFmts count="1"><numFmt numFmtId="164" formatCode="dd mmm yyyy hh:mm"/></numFmts><fonts count="2"><font><sz val="11"/><name val="Calibri"/></font><font><b/><sz val="11"/><color rgb="FF1C160E"/><name val="Calibri"/></font></fonts><fills count="3"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill><fill><patternFill patternType="solid"><fgColor rgb="FFE2BA70"/><bgColor indexed="64"/></patternFill></fill></fills><borders count="1"><border><left/><right/><top/><bottom/><diagonal/></border></borders><cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs><cellXfs count="3"><xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/><xf numFmtId="0" fontId="1" fillId="2" borderId="0" xfId="0" applyFont="1" applyFill="1"/><xf numFmtId="164" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1"/></cellXfs><cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles></styleSheet>` },
+      ...named.map((s, i) => ({ name: `xl/worksheets/sheet${i + 1}.xml`, data: sheetXml(s) })),
+    ];
+    return zip(files);
+  }
+  function download(filename, sheets) {
+    const blob = build(sheets);
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob); a.download = filename;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+  }
+  return { build, download };
+})();
+
+// isi workbook VIGIB Race dari data (modes.liga/normal/team)
+function vigibSheets(data) {
+  const L = { liga: "LIGA", normal: "NORMAL", team: "TEAM" };
+  const d = (u) => (u ? new Date(Number(u) * 1000) : "");
+  const sheets = [];
+  const lb = data.modes && data.modes.liga && data.modes.liga.ligaLeaderboard;
+  if (Array.isArray(lb) && lb.length) {
+    sheets.push({ name: "Klasemen Liga", cols: [{ h: "Rank", w: 7 }, { h: "Nama", w: 26 }, { h: "UserId", w: 14 }, { h: "Total Poin", w: 12 }, { h: "Sesi", w: 8 }],
+      rows: [...lb].sort((a, b) => (Number(b.totalPoints) || 0) - (Number(a.totalPoints) || 0)).map((e, i) => [i + 1, e.displayName || "", Number(e.userId) || "", Number(e.totalPoints) || 0, e.sessionCount != null ? Number(e.sessionCount) : ""]) });
+  }
+  for (const m of ["liga", "normal", "team"]) {
+    const ss = [...((data.modes && data.modes[m] && data.modes[m].sessions) || [])].sort((a, b) => a.sessionNumber - b.sessionNumber);
+    if (!ss.length) continue;
+    const rows = [];
+    for (const s of ss) {
+      const lp = {}; (s.ligaPoints || []).forEach((l) => { lp[l.userId] = l.points; });
+      const ch = [...(s.champions || [])].sort((a, b) => a.rank - b.rank);
+      if (!ch.length) rows.push([s.sessionNumber, d(s.timestamp), "", "(tidak ada yang finish)", "", "", (s.participants || []).length]);
+      ch.forEach((c) => rows.push([s.sessionNumber, d(s.timestamp), Number(c.rank) || "", c.displayName || "", Number(c.userId) || "", m === "liga" ? (lp[c.userId] ?? c.points ?? "") : (c.points ?? ""), (s.participants || []).length]));
+    }
+    sheets.push({ name: `Juara ${L[m]}`, cols: [{ h: "Sesi", w: 7 }, { h: "Tanggal", w: 19 }, { h: "Posisi", w: 8 }, { h: "Nama", w: 26 }, { h: "UserId", w: 14 }, { h: m === "liga" ? "Poin Liga" : "Poin", w: 10 }, { h: "Jumlah Peserta", w: 15 }], rows });
+    const pr = [];
+    ss.forEach((s) => (s.participants || []).forEach((p) => pr.push([s.sessionNumber, d(s.timestamp), p.displayName || "", Number(p.userId) || "", p.team ? p.team.name || "" : ""])));
+    if (pr.length) sheets.push({ name: `Peserta ${L[m]}`, cols: [{ h: "Sesi", w: 7 }, { h: "Tanggal", w: 19 }, { h: "Nama", w: 26 }, { h: "UserId", w: 14 }, { h: "Tim", w: 16 }], rows: pr });
+    if (m === "team") {
+      const tr = [];
+      ss.forEach((s) => [...(s.teamData || [])].sort((a, b) => (b.points || 0) - (a.points || 0)).forEach((t, i) => tr.push([s.sessionNumber, d(s.timestamp), i + 1, t.name || "", Number(t.points) || 0, Number(t.memberCount) || 0])));
+      if (tr.length) sheets.push({ name: "Tim per Sesi", cols: [{ h: "Sesi", w: 7 }, { h: "Tanggal", w: 19 }, { h: "Peringkat", w: 10 }, { h: "Tim", w: 20 }, { h: "Poin", w: 9 }, { h: "Anggota", w: 9 }], rows: tr });
+    }
+  }
+  if (!sheets.length) sheets.push({ name: "VIGIB Race", cols: [{ h: "Info", w: 40 }], rows: [["Belum ada data race"]] });
+  return sheets;
+}
+function vigibExcelName() {
+  const t = new Date(), p = (n) => String(n).padStart(2, "0");
+  return `VIGIB_Race_${t.getFullYear()}-${p(t.getMonth() + 1)}-${p(t.getDate())}_${p(t.getHours())}${p(t.getMinutes())}.xlsx`;
+}
 
 // ---------- state ----------
 const S = { data: null, error: null, lastFetch: 0, avatars: {}, tab: "standings", mode: "liga", q: "", sortBy: "default", order: "desc", known: null };
@@ -375,16 +519,16 @@ function render() {
 
   if (S.tab === "standings") {
     const head = S.mode === "team"
-      ? `<tr><th style="width:64px">Rank</th><th class="l">Tim</th><th>Sesi</th><th>Menang Sesi 🏆</th><th>Anggota</th><th class="r">Total Poin</th></tr>`
-      : `<tr><th style="width:64px">Rank</th><th class="l">Pembalap</th><th>Sesi Diikuti</th><th>Juara 1 🏆</th><th>Podium 🥇🥈🥉</th><th class="r">${S.mode === "liga" ? "Poin Liga" : "Total Finish"}</th></tr>`;
+      ? `<tr><th style="width:56px">Rank</th><th class="l">Tim</th><th class="hm">Sesi</th><th>Menang 🏆</th><th class="hm">Anggota</th><th class="r">Total Poin</th></tr>`
+      : `<tr><th style="width:56px">Rank</th><th class="l">Pembalap</th><th class="hm">Sesi Diikuti</th><th>Juara 1 🏆</th><th class="hm">Podium 🥇🥈🥉</th><th class="r">${S.mode === "liga" ? "Poin Liga" : "Total Finish"}</th></tr>`;
     const body = !rows.length
       ? `<tr><td colspan="6">${empty(S.data ? `Belum ada data ${mi.long}. Kirim dari dalam game dengan tombol Kirim W.` : "Memuat data...")}</td></tr>`
       : rows.map((r) => S.mode === "team"
         ? `<tr><td>${rankBadge(r.rank)}</td><td class="l"><div class="who-cell"><span class="tbar" style="background:${esc(r.colorHex)}"></span><span class="nm">${esc(r.name)}</span></div></td>
-            <td class="muted">${r.sessions}</td><td><b class="gold">${r.wins}</b></td><td class="muted">${r.members}</td>
+            <td class="muted hm">${r.sessions}</td><td><b class="gold">${r.wins}</b></td><td class="muted hm">${r.members}</td>
             <td class="r"><span class="pts">${r.points} <small>PTS</small></span></td></tr>`
         : `<tr><td>${rankBadge(r.rank)}</td><td class="l"><div class="who-cell">${avatar(r.userId, r.username)}<div style="min-width:0"><div class="nm">${esc(r.username)}</div><div class="sub">ID: ${esc(r.userId)}</div></div></div></td>
-            <td class="muted">${r.sessions}</td><td><b class="gold">${r.wins}</b></td><td class="muted">${r.podiums}</td>
+            <td class="muted hm">${r.sessions}</td><td><b class="gold">${r.wins}</b></td><td class="muted hm">${r.podiums}</td>
             <td class="r"><span class="pts">${S.mode === "liga" ? r.points : r.finishes} <small>${S.mode === "liga" ? "PTS" : "FINISH"}</small></span></td></tr>`).join("");
     html += `
     <main class="panel main">
@@ -398,6 +542,7 @@ function render() {
           <select id="sort">${SORTS.map(([v, l]) => `<option value="${v}" ${S.sortBy === v ? "selected" : ""}>${l}</option>`).join("")}</select>
           <button class="ibtn" id="order" title="Ubah urutan">${ico(S.order === "asc" ? "up" : "down")}</button>
           <button class="ibtn" id="reload" title="Muat ulang">${ico("refresh")}</button>
+          <button class="xbtn gold-btn" id="excel" title="Unduh semua data race sebagai file Excel">${ico("xls")}Download Excel</button>
         </div>
       </div>
       <div class="tbl-wrap"><table><thead>${head}</thead><tbody>${body}</tbody></table></div>
@@ -423,7 +568,7 @@ function render() {
       }).join("");
     html += `
     <main class="panel main">
-      <div class="main-head" style="border-bottom:1px solid rgba(88,72,50,.7);padding-bottom:12px"><h2>${ico("book")}Riwayat Sesi · ${mi.long}</h2><span class="muted" style="font-size:12px">${sessions.length} sesi tercatat</span></div>
+      <div class="main-head" style="border-bottom:1px solid rgba(88,72,50,.7);padding-bottom:12px"><h2>${ico("book")}Riwayat Sesi · ${mi.long}</h2><div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap"><span class="muted" style="font-size:12px">${sessions.length} sesi tercatat</span><button class="xbtn gold-btn" id="excel">${ico("xls")}Download Excel</button></div></div>
       <div style="display:flex;flex-direction:column;gap:12px">${cards}</div>
     </main>`;
   }
@@ -442,8 +587,13 @@ function render() {
 
 // ---------- event ----------
 document.getElementById("app").addEventListener("click", (e) => {
-  const t = e.target.closest("[data-tab],[data-mode],#order,#reload");
+  const t = e.target.closest("[data-tab],[data-mode],#order,#reload,#excel");
   if (!t) return;
+  if (t.id === "excel") {
+    if (!S.data) { toast("Data belum dimuat"); return; }
+    try { XLSX.download(vigibExcelName(), vigibSheets(S.data)); toast("File Excel diunduh"); } catch (er) { toast("Gagal membuat Excel: " + (er.message || er)); }
+    return;
+  }
   if (t.dataset.tab) S.tab = t.dataset.tab;
   else if (t.dataset.mode) { if (S.mode !== t.dataset.mode) { S.mode = t.dataset.mode; S.sortBy = "default"; S.order = "desc"; S.q = ""; } }
   else if (t.id === "order") S.order = S.order === "asc" ? "desc" : "asc";
