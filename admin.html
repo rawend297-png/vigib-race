@@ -1,0 +1,521 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
+<title>Panel Admin · VIGIB Race</title>
+<link rel="icon" type="image/png" href="logo-vg.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Cinzel:wght@700;800;900&display=swap" rel="stylesheet">
+<style>
+:root{
+  --base:#100d0a; --deep:#0b0907; --card:#221d17; --card2:#2e271d; --line:#584832;
+  --gold:#e2ba70; --hi:#ffecc4; --lo:#966c30; --ivory:#faf3e4; --muted:#b0a696; --ink:#1c160e;
+  --sage:#9cc79a; --rose:#e58a7a; --sky:#8fb8d8;
+  --display:'Cinzel', Georgia, serif; --sans:'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{min-height:100vh;background:var(--base);color:var(--ivory);font-family:var(--sans);font-size:14px;
+  background-image:radial-gradient(circle at 12% 8%, rgba(226,186,112,.10) 0%, transparent 38%),radial-gradient(circle at 88% 92%, rgba(150,108,48,.12) 0%, transparent 42%);background-attachment:fixed}
+.wrap{max-width:1180px;margin:0 auto;padding:24px 20px;display:flex;flex-direction:column;gap:20px}
+.panel{background:linear-gradient(180deg,rgba(46,39,29,.82),rgba(34,29,23,.86));border:1px solid rgba(226,186,112,.18);border-radius:16px}
+.gold-text{background:linear-gradient(180deg,#ffecc4 0%,#e2ba70 55%,#966c30 100%);-webkit-background-clip:text;background-clip:text;color:transparent}
+.cinzel{font-family:var(--display)}
+.muted{color:var(--muted)} .gold{color:var(--gold)} .sage{color:var(--sage)} .rose{color:var(--rose)}
+.ico{width:16px;height:16px;flex-shrink:0;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+button,input,select{font-family:var(--sans);font-size:13px}
+.btn{display:inline-flex;align-items:center;gap:7px;padding:8px 14px;border-radius:9px;border:1px solid rgba(226,186,112,.3);background:rgba(11,9,7,.6);color:var(--ivory);cursor:pointer;font-weight:600;transition:.15s;white-space:nowrap}
+.btn:hover{border-color:var(--gold);color:var(--hi)}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.btn.gold{background:linear-gradient(180deg,#ffecc4 0%,#e2ba70 100%);color:var(--ink);border-color:transparent}
+.btn.gold:hover{filter:brightness(1.05);color:var(--ink)}
+.btn.danger{border-color:rgba(229,138,122,.45);color:var(--rose)}
+.btn.danger:hover{background:rgba(229,138,122,.12);color:#ffb3a6}
+.btn.sm{padding:5px 10px;font-size:12px;border-radius:7px}
+.btn.ghost{background:none;border-color:transparent;color:var(--muted)} .btn.ghost:hover{color:var(--ivory)}
+input.in,select.in{width:100%;padding:10px 12px;border-radius:9px;border:1px solid rgba(88,72,50,.9);background:rgba(11,9,7,.75);color:var(--ivory);outline:none}
+input.in:focus,select.in:focus{border-color:var(--gold);box-shadow:0 0 0 3px rgba(226,186,112,.15)}
+input.cell{width:100%;padding:6px 8px;border-radius:6px;border:1px solid rgba(88,72,50,.7);background:rgba(11,9,7,.6);color:var(--ivory);outline:none;font-size:13px}
+input.cell:focus{border-color:var(--gold)}
+input.cell.n{max-width:90px}
+label.lb{display:block;font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:0 0 6px}
+
+/* login */
+.login{max-width:400px;margin:8vh auto 0;padding:30px 28px;display:flex;flex-direction:column;gap:16px;text-align:center}
+.login img{width:84px;height:84px;margin:0 auto;filter:drop-shadow(0 0 18px rgba(226,186,112,.35))}
+.login h1{margin:0;font-family:var(--display);font-size:26px;letter-spacing:.06em}
+.login form{display:flex;flex-direction:column;gap:12px;text-align:left}
+.msg{padding:10px 12px;border-radius:9px;font-size:13px}
+.msg.err{background:rgba(229,138,122,.1);border:1px solid rgba(229,138,122,.35);color:var(--rose)}
+.msg.ok{background:rgba(156,199,154,.1);border:1px solid rgba(156,199,154,.35);color:var(--sage)}
+.msg.warn{background:rgba(226,186,112,.08);border:1px solid rgba(226,186,112,.35);color:var(--hi)}
+
+/* header */
+header.panel{padding:16px 20px;display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap}
+.brand{display:flex;align-items:center;gap:14px}
+.brand img{width:48px;height:48px}
+.brand h1{margin:0;font-family:var(--display);font-size:22px;letter-spacing:.06em}
+.brand p{margin:2px 0 0;color:var(--muted);font-size:12px}
+.who{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.role{font-size:10px;font-weight:800;letter-spacing:.12em;padding:3px 8px;border-radius:6px;text-transform:uppercase}
+.role.super{background:linear-gradient(180deg,#ffecc4,#e2ba70);color:var(--ink)}
+.role.admin{background:rgba(143,184,216,.15);color:var(--sky);border:1px solid rgba(143,184,216,.35)}
+.tabs{display:flex;gap:6px;flex-wrap:wrap;background:rgba(11,9,7,.7);padding:6px;border-radius:12px;border:1px solid rgba(88,72,50,.7);width:fit-content}
+.tab{display:flex;align-items:center;gap:8px;padding:8px 14px;border-radius:9px;font-weight:600;color:var(--muted);background:none;border:0;cursor:pointer}
+.tab:hover{color:var(--ivory);background:rgba(46,39,29,.7)}
+.tab.active{background:linear-gradient(180deg,#ffecc4 0%,#e2ba70 100%);color:var(--ink)}
+.main{padding:20px}
+.bar{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:16px}
+.bar h2{margin:0;font-family:var(--display);font-size:20px}
+.seg{display:inline-flex;gap:4px;padding:4px;border-radius:10px;background:rgba(11,9,7,.6);border:1px solid rgba(88,72,50,.7)}
+.seg button{padding:6px 14px;border-radius:7px;border:0;background:none;color:var(--muted);font-family:var(--display);font-weight:800;letter-spacing:.12em;font-size:12px;cursor:pointer}
+.seg button.active{background:linear-gradient(180deg,#ffecc4,#e2ba70);color:var(--ink)}
+
+/* list */
+.list{display:flex;flex-direction:column;gap:10px}
+.item{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:14px 16px;border-radius:12px;background:rgba(11,9,7,.45);border:1px solid rgba(88,72,50,.6);flex-wrap:wrap}
+.item.deleted{opacity:.55;border-style:dashed}
+.item .t{font-weight:700;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.item .s{font-size:12px;color:var(--muted);margin-top:4px}
+.tag{font-size:10px;font-weight:800;letter-spacing:.1em;padding:2px 7px;border-radius:5px;text-transform:uppercase}
+.tag.ed{background:rgba(143,184,216,.15);color:var(--sky)}
+.tag.del{background:rgba(229,138,122,.15);color:var(--rose)}
+.acts{display:flex;gap:6px;flex-wrap:wrap}
+.empty{padding:40px 10px;text-align:center;color:var(--muted)}
+table{width:100%;border-collapse:collapse}
+th{text-align:left;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);padding:10px;border-bottom:1px solid rgba(88,72,50,.7);font-weight:700}
+td{padding:9px 10px;border-bottom:1px solid rgba(88,72,50,.35);vertical-align:middle}
+tr.deleted td{opacity:.5}
+.tw{overflow-x:auto;border-radius:12px;border:1px solid rgba(88,72,50,.6);background:rgba(11,9,7,.35)}
+
+/* modal */
+.modal-bg{position:fixed;inset:0;background:rgba(5,4,3,.75);backdrop-filter:blur(4px);z-index:40;display:flex;align-items:flex-start;justify-content:center;padding:4vh 14px;overflow-y:auto}
+.modal{width:100%;max-width:880px;padding:22px;display:flex;flex-direction:column;gap:16px}
+.modal.sm{max-width:420px}
+.modal h3{margin:0;font-family:var(--display);font-size:19px}
+.sec{display:flex;flex-direction:column;gap:8px}
+.sec h4{margin:4px 0 0;font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--gold)}
+.foot{display:flex;justify-content:flex-end;gap:8px;flex-wrap:wrap}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.toast{position:fixed;top:18px;right:18px;z-index:60;padding:12px 16px;border-radius:12px;box-shadow:0 10px 40px rgba(0,0,0,.5);max-width:360px}
+.log td{font-size:12.5px}
+@media (max-width:640px){.grid2{grid-template-columns:1fr}.wrap{padding:14px 10px}.main{padding:14px}}
+</style>
+</head>
+<body>
+<div class="wrap" id="app"></div>
+<div id="modal"></div>
+<div id="toast"></div>
+<script>
+(() => {
+"use strict";
+const MODES = { liga: "LIGA", normal: "NORMAL", team: "TEAM" };
+const P = {
+  book:'<path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>',
+  trophy:'<path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/>',
+  users:'<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>',
+  list:'<line x1="8" x2="21" y1="6" y2="6"/><line x1="8" x2="21" y1="12" y2="12"/><line x1="8" x2="21" y1="18" y2="18"/><line x1="3" x2="3.01" y1="6" y2="6"/><line x1="3" x2="3.01" y1="12" y2="12"/><line x1="3" x2="3.01" y1="18" y2="18"/>',
+  edit:'<path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/>',
+  trash:'<path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>',
+  undo:'<path d="M3 7v6h6"/><path d="M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13"/>',
+  key:'<circle cx="7.5" cy="15.5" r="5.5"/><path d="m21 2-9.6 9.6"/><path d="m15.5 7.5 3 3L22 7l-3-3"/>',
+  out:'<path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" x2="9" y1="12" y2="12"/>',
+  plus:'<path d="M5 12h14"/><path d="M12 5v14"/>',
+  home:'<path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>',
+  refresh:'<path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/>',
+  x:'<path d="M18 6 6 18"/><path d="m6 6 12 12"/>',
+};
+const ico = (n) => `<svg class="ico" viewBox="0 0 24 24" aria-hidden="true">${P[n] || ""}</svg>`;
+const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const fmtDate = (unix) => unix ? new Date(unix * 1000).toLocaleString("id-ID", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" }) : "-";
+const fmtMs = (ms) => ms ? new Date(ms).toLocaleString("id-ID", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" }) : "-";
+const $ = (sel, root = document) => root.querySelector(sel);
+
+const S = { user: null, tab: "sesi", mode: "liga", raw: null, ov: null, accounts: null, log: null, busy: false, loginErr: null, setup: null };
+
+async function api(path, body, method) {
+  const opt = { method: method || (body ? "POST" : "GET"), credentials: "same-origin", headers: {} };
+  if (body) { opt.headers["content-type"] = "application/json"; opt.headers["x-vigib"] = "1"; opt.body = JSON.stringify(body); }
+  const r = await fetch(path, opt);
+  let j = {};
+  try { j = await r.json(); } catch {}
+  if (r.status === 401 && path !== "/api/login" && path !== "/api/password") { S.user = null; render(); }
+  if (!r.ok || j.ok === false) throw new Error(j.error || ("HTTP " + r.status));
+  return j;
+}
+function toast(msg, kind = "ok") {
+  const el = $("#toast");
+  el.innerHTML = `<div class="toast panel msg ${kind}">${esc(msg)}</div>`;
+  clearTimeout(toast.t); toast.t = setTimeout(() => { el.innerHTML = ""; }, 3800);
+}
+async function run(fn, okMsg) {
+  if (S.busy) return;
+  S.busy = true;
+  try { await fn(); if (okMsg) toast(okMsg, "ok"); }
+  catch (e) { toast(e.message || String(e), "err"); }
+  finally { S.busy = false; }
+}
+
+// ---------- data ----------
+async function loadState() {
+  const j = await api("/api/admin/state");
+  S.raw = j.raw; S.ov = j.overlay;
+}
+async function loadAccounts() { S.accounts = (await api("/api/super/accounts")).accounts; }
+async function loadLog() { S.log = (await api("/api/admin/log")).log; }
+async function refreshTab() {
+  if (S.tab === "sesi" || S.tab === "klasemen") await loadState();
+  if (S.tab === "akun") await loadAccounts();
+  if (S.tab === "log") await loadLog();
+}
+
+function sessionsView(mode) {
+  const raw = (S.raw && S.raw.modes[mode] && S.raw.modes[mode].sessions) || [];
+  const del = new Set((S.ov.deleted[mode] || []).map(Number));
+  const ed = S.ov.edits[mode] || {};
+  return [...raw].sort((a, b) => b.sessionNumber - a.sessionNumber).map((s) => ({
+    raw: s, cur: ed[s.sessionNumber] || s, edited: !!ed[s.sessionNumber], deleted: del.has(Number(s.sessionNumber)),
+  }));
+}
+function leaderboardView() {
+  const lb = (S.raw && S.raw.modes.liga && S.raw.modes.liga.ligaLeaderboard) || [];
+  const del = new Set((S.ov.lbDeleted.liga || []).map(String));
+  const ed = S.ov.lbEdits.liga || {};
+  return lb.map((e) => ({ raw: e, cur: ed[e.userId] ? { ...e, ...ed[e.userId] } : e, edited: !!ed[e.userId], deleted: del.has(String(e.userId)) }))
+    .sort((a, b) => (Number(b.cur.totalPoints) || 0) - (Number(a.cur.totalPoints) || 0));
+}
+
+// ---------- render ----------
+function render() {
+  const app = $("#app");
+  if (!S.user && S.setup && S.setup.needed) { app.innerHTML = setupView(); bindSetup(); return; }
+  if (!S.user) { app.innerHTML = loginView(); bindLogin(); return; }
+  const isSuper = S.user.role === "super";
+  const tabs = [["sesi", "Data Sesi", "book"], ["klasemen", "Klasemen Liga", "trophy"]]
+    .concat(isSuper ? [["akun", "Akun Admin", "users"]] : []).concat([["log", "Log", "list"]]);
+  app.innerHTML = `
+  <header class="panel">
+    <div class="brand"><img src="logo-vg.png" alt="VG"><div><h1 class="gold-text">PANEL ADMIN</h1><p>VIGIB Race · Buku Juara</p></div></div>
+    <div class="who">
+      <span class="role ${S.user.role}">${S.user.role === "super" ? "Super Admin" : "Admin"}</span>
+      <b>${esc(S.user.username)}</b>
+      <button class="btn sm" data-act="pw">${ico("key")} Ganti Password</button>
+      <a class="btn sm" href="./" target="_blank" rel="noopener">${ico("home")} Website</a>
+      <button class="btn sm danger" data-act="logout">${ico("out")} Keluar</button>
+    </div>
+  </header>
+  ${S.user.seeded ? `<div class="msg warn">Akun ini masih memakai password awal. Disarankan segera <b>Ganti Password</b>.</div>` : ""}
+  <nav class="tabs">${tabs.map(([k, l, i]) => `<button class="tab ${S.tab === k ? "active" : ""}" data-tab="${k}">${ico(i)} ${l}</button>`).join("")}</nav>
+  <section class="panel main">${tabBody()}</section>`;
+  bindMain();
+}
+
+function loginView() {
+  return `<div class="panel login">
+    <img src="logo-vg.png" alt="VG">
+    <div><h1 class="gold-text">PANEL ADMIN</h1><div class="muted" style="margin-top:4px">VIGIB Race · Buku Juara</div></div>
+    ${S.loginErr ? `<div class="msg err">${esc(S.loginErr)}</div>` : ""}
+    <form id="loginForm" autocomplete="on">
+      <div><label class="lb" for="u">Username</label><input class="in" id="u" name="username" autocomplete="username" required maxlength="20"></div>
+      <div><label class="lb" for="p">Password</label><input class="in" id="p" name="password" type="password" autocomplete="current-password" required maxlength="128"></div>
+      <button class="btn gold" type="submit" style="justify-content:center;padding:11px">Masuk</button>
+    </form>
+    <a class="muted" href="./" style="font-size:12px;text-decoration:none">← Kembali ke website</a>
+  </div>`;
+}
+function setupView() {
+  return `<div class="panel login">
+    <img src="logo-vg.png" alt="VG">
+    <div><h1 class="gold-text">SETUP AWAL</h1><div class="muted" style="margin-top:4px">Buat akun Super Admin (hanya sekali)</div></div>
+    ${S.loginErr ? `<div class="msg err">${esc(S.loginErr)}</div>` : ""}
+    <form id="setupForm" autocomplete="off">
+      <div><label class="lb" for="su">Username</label><input class="in" id="su" value="${esc(S.setup.username)}" readonly></div>
+      <div><label class="lb" for="sp">Password</label><input class="in" id="sp" type="password" required minlength="8" maxlength="128" autocomplete="new-password"></div>
+      <div><label class="lb" for="sp2">Ulangi Password</label><input class="in" id="sp2" type="password" required minlength="8" maxlength="128" autocomplete="new-password"></div>
+      <button class="btn gold" type="submit" style="justify-content:center;padding:11px">Buat Super Admin</button>
+    </form>
+  </div>`;
+}
+function bindSetup() {
+  $("#setupForm").addEventListener("submit", (e) => {
+    e.preventDefault();
+    if ($("#sp").value !== $("#sp2").value) { S.loginErr = "Password tidak sama"; render(); return; }
+    run(async () => {
+      try {
+        const j = await api("/api/setup", { username: S.setup.username, password: $("#sp").value });
+        S.user = j.user; S.setup = { needed: false }; S.loginErr = null;
+        await refreshTab();
+      } catch (er) { S.loginErr = er.message; }
+      render();
+    }, null);
+  });
+}
+function bindLogin() {
+  $("#loginForm").addEventListener("submit", (e) => {
+    e.preventDefault();
+    const fd = new FormData(e.target);
+    run(async () => {
+      try {
+        const j = await api("/api/login", { username: fd.get("username"), password: fd.get("password") });
+        S.user = j.user; S.loginErr = null;
+        await refreshTab();
+      } catch (er) { S.loginErr = er.message; }
+      render();
+    });
+  });
+}
+
+function tabBody() {
+  if (S.tab === "sesi") return sesiBody();
+  if (S.tab === "klasemen") return klasemenBody();
+  if (S.tab === "akun") return akunBody();
+  return logBody();
+}
+const segModes = () => `<div class="seg">${Object.entries(MODES).map(([k, l]) => `<button data-mode="${k}" class="${S.mode === k ? "active" : ""}">${l}</button>`).join("")}</div>`;
+
+function sesiBody() {
+  if (!S.raw) return `<div class="empty">Memuat…</div>`;
+  const list = sessionsView(S.mode);
+  const items = list.map(({ cur, edited, deleted }) => {
+    const champs = (cur.champions || []).slice().sort((a, b) => a.rank - b.rank).slice(0, 3).map((c) => `${c.rank}. ${esc(c.displayName)}`).join(" · ");
+    return `<div class="item ${deleted ? "deleted" : ""}">
+      <div><div class="t">Sesi #${cur.sessionNumber} ${edited ? `<span class="tag ed">Diedit</span>` : ""} ${deleted ? `<span class="tag del">Dihapus</span>` : ""}</div>
+        <div class="s">${fmtDate(cur.timestamp)} · ${(cur.participants || []).length} peserta${champs ? " · " + champs : ""}</div></div>
+      <div class="acts">
+        ${deleted ? `<button class="btn sm" data-act="restore" data-n="${cur.sessionNumber}">${ico("undo")} Pulihkan</button>`
+          : `<button class="btn sm" data-act="edit" data-n="${cur.sessionNumber}">${ico("edit")} Edit</button>
+             ${edited ? `<button class="btn sm ghost" data-act="revert" data-n="${cur.sessionNumber}">${ico("undo")} Batalkan Edit</button>` : ""}
+             <button class="btn sm danger" data-act="del" data-n="${cur.sessionNumber}">${ico("trash")} Hapus</button>`}
+      </div></div>`;
+  }).join("");
+  return `<div class="bar"><h2>Data Sesi</h2><div style="display:flex;gap:8px;flex-wrap:wrap">${segModes()}<button class="btn sm" data-act="reload">${ico("refresh")} Muat ulang</button></div></div>
+    <p class="muted" style="margin:-6px 0 14px;font-size:12.5px">Perubahan tampil di website saat itu juga. Data asli dari game tetap disimpan, jadi edit dan hapus bisa dibatalkan kapan saja.</p>
+    <div class="list">${items || `<div class="empty">Belum ada sesi ${MODES[S.mode]}.</div>`}</div>`;
+}
+
+function klasemenBody() {
+  if (!S.raw) return `<div class="empty">Memuat…</div>`;
+  const rows = leaderboardView();
+  const body = rows.map(({ cur, edited, deleted }, i) => `<tr class="${deleted ? "deleted" : ""}" data-uid="${esc(cur.userId)}">
+      <td>${deleted ? "-" : i + 1}</td>
+      <td><input class="cell" data-f="displayName" value="${esc(cur.displayName)}" ${deleted ? "disabled" : ""} maxlength="64"><div class="muted" style="font-size:11px;margin-top:3px">ID ${esc(cur.userId)} ${edited ? `<span class="tag ed">Diedit</span>` : ""} ${deleted ? `<span class="tag del">Dihapus</span>` : ""}</div></td>
+      <td><input class="cell n" data-f="totalPoints" type="number" step="any" value="${esc(cur.totalPoints)}" ${deleted ? "disabled" : ""}></td>
+      <td><input class="cell n" data-f="sessionCount" type="number" value="${esc(cur.sessionCount ?? "")}" ${deleted ? "disabled" : ""}></td>
+      <td><div class="acts">${deleted ? `<button class="btn sm" data-act="lbrestore">${ico("undo")} Pulihkan</button>`
+        : `<button class="btn sm gold" data-act="lbsave">Simpan</button>${edited ? `<button class="btn sm ghost" data-act="lbrevert">${ico("undo")}</button>` : ""}<button class="btn sm danger" data-act="lbdel">${ico("trash")}</button>`}</div></td>
+    </tr>`).join("");
+  return `<div class="bar"><h2>Klasemen Liga</h2><button class="btn sm" data-act="reload">${ico("refresh")} Muat ulang</button></div>
+    <p class="muted" style="margin:-6px 0 14px;font-size:12.5px">Klasemen akumulatif yang dikirim dari Buku Juara. Ubah nama atau poin lalu tekan Simpan.</p>
+    ${rows.length ? `<div class="tw"><table><thead><tr><th>#</th><th>Pembalap</th><th>Total Poin</th><th>Sesi</th><th></th></tr></thead><tbody>${body}</tbody></table></div>`
+      : `<div class="empty">Belum ada klasemen liga. Kirim dari Buku Juara mode Liga di dalam game.</div>`}`;
+}
+
+function akunBody() {
+  if (!S.accounts) return `<div class="empty">Memuat…</div>`;
+  const rows = S.accounts.map((a) => `<tr>
+    <td><b>${esc(a.username)}</b></td>
+    <td><span class="role ${a.role}">${a.role === "super" ? "Super Admin" : "Admin"}</span></td>
+    <td class="muted">${fmtMs(a.createdAt)}<div style="font-size:11px">oleh ${esc(a.createdBy || "-")}</div></td>
+    <td><div class="acts">
+      ${a.role === "super" ? `<span class="muted" style="font-size:12px">Ganti lewat tombol "Ganti Password"</span>`
+        : `<button class="btn sm" data-act="reset" data-u="${esc(a.username)}">${ico("key")} Reset Password</button>
+           <button class="btn sm danger" data-act="delacct" data-u="${esc(a.username)}">${ico("trash")} Hapus</button>`}
+    </div></td></tr>`).join("");
+  return `<div class="bar"><h2>Akun Admin</h2><button class="btn gold" data-act="newacct">${ico("plus")} Buat Akun Admin</button></div>
+    <div class="tw"><table><thead><tr><th>Username</th><th>Peran</th><th>Dibuat</th><th></th></tr></thead><tbody>${rows}</tbody></table></div>`;
+}
+
+function logBody() {
+  if (!S.log) return `<div class="empty">Memuat…</div>`;
+  const rows = S.log.map((l) => `<tr><td class="muted" style="white-space:nowrap">${fmtMs(l.t)}</td><td><b>${esc(l.user)}</b></td><td>${esc(l.action)}</td><td>${esc(l.detail)}</td></tr>`).join("");
+  return `<div class="bar"><h2>Log Aktivitas</h2><button class="btn sm" data-act="reload">${ico("refresh")} Muat ulang</button></div>
+    ${rows ? `<div class="tw log"><table><thead><tr><th>Waktu</th><th>Akun</th><th>Jenis</th><th>Detail</th></tr></thead><tbody>${rows}</tbody></table></div>` : `<div class="empty">Belum ada aktivitas.</div>`}`;
+}
+
+// ---------- modal ----------
+function openModal(html, onBind, size = "") {
+  $("#modal").innerHTML = `<div class="modal-bg"><div class="panel modal ${size}">${html}</div></div>`;
+  const bg = $("#modal .modal-bg");
+  bg.addEventListener("mousedown", (e) => { if (e.target === bg) closeModal(); });
+  $("#modal [data-close]") && $("#modal").querySelectorAll("[data-close]").forEach((b) => b.addEventListener("click", closeModal));
+  onBind && onBind($("#modal .modal"));
+}
+function closeModal() { $("#modal").innerHTML = ""; }
+document.addEventListener("keydown", (e) => { if (e.key === "Escape") closeModal(); });
+
+function confirmBox(title, text, okLabel, danger) {
+  return new Promise((resolve) => {
+    openModal(`<h3>${esc(title)}</h3><p class="muted" style="margin:0">${esc(text)}</p>
+      <div class="foot"><button class="btn" data-close>Batal</button><button class="btn ${danger ? "danger" : "gold"}" id="okb">${esc(okLabel)}</button></div>`,
+      (m) => { $("#okb", m).addEventListener("click", () => { closeModal(); resolve(true); }); }, "sm");
+    $("#modal").querySelectorAll("[data-close]").forEach((b) => b.addEventListener("click", () => resolve(false)));
+  });
+}
+
+function rowsEditor(key, title, rows, cols) {
+  const tr = (r) => `<tr>${cols.map((c) => `<td><input class="cell ${c.num ? "n" : ""}" data-f="${c.f}" ${c.num ? 'type="number" step="any"' : ""} value="${esc(r[c.f] ?? "")}" ${c.ro ? "readonly" : ""}></td>`).join("")}
+    <td><button class="btn sm ghost" data-rm title="Hapus baris">${ico("x")}</button></td></tr>`;
+  return `<div class="sec" data-sec="${key}"><h4>${title}</h4>
+    <div class="tw"><table><thead><tr>${cols.map((c) => `<th>${c.l}</th>`).join("")}<th></th></tr></thead>
+    <tbody>${rows.map(tr).join("") || `<tr class="none"><td colspan="${cols.length + 1}" class="muted">Kosong</td></tr>`}</tbody></table></div></div>`;
+}
+const COLS = {
+  champions: [{ f: "rank", l: "Posisi", num: 1 }, { f: "displayName", l: "Nama" }, { f: "points", l: "Poin", num: 1 }, { f: "userId", l: "UserId", num: 1 }],
+  ligaPoints: [{ f: "displayName", l: "Nama" }, { f: "points", l: "Poin Liga", num: 1 }, { f: "userId", l: "UserId", num: 1 }],
+  participants: [{ f: "displayName", l: "Nama" }, { f: "userId", l: "UserId", num: 1 }],
+  teamData: [{ f: "name", l: "Tim" }, { f: "points", l: "Poin", num: 1 }, { f: "memberCount", l: "Anggota", num: 1 }],
+};
+function editSession(n) {
+  const v = sessionsView(S.mode).find((x) => Number(x.cur.sessionNumber) === Number(n));
+  if (!v) return;
+  const s = JSON.parse(JSON.stringify(v.cur));
+  const secs = [rowsEditor("champions", "Juara / Finish", s.champions || [], COLS.champions)];
+  if (S.mode === "liga" || s.ligaPoints) secs.push(rowsEditor("ligaPoints", "Poin Liga Sesi Ini", s.ligaPoints || [], COLS.ligaPoints));
+  if (S.mode === "team" || s.teamData) secs.push(rowsEditor("teamData", "Tim", s.teamData || [], COLS.teamData));
+  secs.push(rowsEditor("participants", "Peserta", s.participants || [], COLS.participants));
+  openModal(`<h3>Edit Sesi ${MODES[S.mode]} #${s.sessionNumber}</h3>
+    <div class="muted" style="font-size:12.5px;margin-top:-8px">${fmtDate(s.timestamp)}${v.edited ? " · sudah pernah diedit" : ""}</div>
+    ${secs.join("")}
+    <div class="foot"><button class="btn" data-close>Batal</button><button class="btn gold" id="saveSess">Simpan Perubahan</button></div>`, (m) => {
+    m.querySelectorAll("[data-rm]").forEach((b) => b.addEventListener("click", () => b.closest("tr").remove()));
+    $("#saveSess", m).addEventListener("click", () => {
+      const read = (key) => {
+        const sec = m.querySelector(`[data-sec="${key}"]`);
+        if (!sec) return undefined;
+        return [...sec.querySelectorAll("tbody tr:not(.none)")].map((tr) => {
+          const orig = ((s[key] || [])[Number(tr.dataset.i)]) || {};
+          const o = { ...orig };
+          tr.querySelectorAll("[data-f]").forEach((inp) => {
+            const f = inp.dataset.f;
+            o[f] = inp.type === "number" ? (inp.value === "" ? undefined : Number(inp.value)) : inp.value;
+          });
+          return o;
+        });
+      };
+      const out = { ...s };
+      ["champions", "ligaPoints", "teamData", "participants"].forEach((k) => { const r = read(k); if (r !== undefined) out[k] = r; });
+      run(async () => {
+        const j = await api("/api/admin/session/save", { mode: S.mode, session: out });
+        S.ov = j.overlay; closeModal(); render();
+      }, `Sesi #${s.sessionNumber} disimpan`);
+    });
+  });
+  // tandai indeks asli tiap baris supaya data tambahan (team, members) tidak hilang saat baris lain dihapus
+  $("#modal").querySelectorAll("[data-sec]").forEach((sec) => sec.querySelectorAll("tbody tr:not(.none)").forEach((tr, i) => { tr.dataset.i = i; }));
+}
+
+function accountForm(mode, username) {
+  const isNew = mode === "new";
+  openModal(`<h3>${isNew ? "Buat Akun Admin" : "Reset Password · " + esc(username)}</h3>
+    <form id="af" class="sec" autocomplete="off">
+      ${isNew ? `<div><label class="lb" for="nu">Username</label><input class="in" id="nu" required maxlength="20" pattern="[A-Za-z0-9_]{3,20}" autocomplete="off"><div class="muted" style="font-size:11.5px;margin-top:4px">3-20 karakter: huruf, angka, garis bawah</div></div>` : ""}
+      <div><label class="lb" for="np">Password ${isNew ? "" : "Baru"}</label><input class="in" id="np" type="password" required minlength="8" maxlength="128" autocomplete="new-password"></div>
+      <div><label class="lb" for="np2">Ulangi Password</label><input class="in" id="np2" type="password" required minlength="8" maxlength="128" autocomplete="new-password"></div>
+      <div id="aferr"></div>
+      <div class="foot"><button type="button" class="btn" data-close>Batal</button><button class="btn gold" type="submit">${isNew ? "Buat Akun" : "Reset Password"}</button></div>
+    </form>`, (m) => {
+    $("#af", m).addEventListener("submit", (e) => {
+      e.preventDefault();
+      const p1 = $("#np", m).value, p2 = $("#np2", m).value;
+      if (p1 !== p2) { $("#aferr", m).innerHTML = `<div class="msg err">Password tidak sama</div>`; return; }
+      const u = isNew ? $("#nu", m).value.trim() : username;
+      run(async () => {
+        await api(isNew ? "/api/super/accounts/create" : "/api/super/accounts/reset", { username: u, password: p1 });
+        closeModal(); await loadAccounts(); render();
+      }, isNew ? `Akun admin ${u} dibuat` : `Password ${u} direset`);
+    });
+  }, "sm");
+}
+
+function passwordForm() {
+  openModal(`<h3>Ganti Password</h3>
+    <form id="pf" class="sec">
+      <div><label class="lb" for="op">Password Lama</label><input class="in" id="op" type="password" required autocomplete="current-password"></div>
+      <div><label class="lb" for="p1">Password Baru</label><input class="in" id="p1" type="password" required minlength="8" maxlength="128" autocomplete="new-password"></div>
+      <div><label class="lb" for="p2">Ulangi Password Baru</label><input class="in" id="p2" type="password" required minlength="8" maxlength="128" autocomplete="new-password"></div>
+      <div id="pferr"></div>
+      <div class="foot"><button type="button" class="btn" data-close>Batal</button><button class="btn gold" type="submit">Simpan</button></div>
+    </form>`, (m) => {
+    $("#pf", m).addEventListener("submit", (e) => {
+      e.preventDefault();
+      if ($("#p1", m).value !== $("#p2", m).value) { $("#pferr", m).innerHTML = `<div class="msg err">Password baru tidak sama</div>`; return; }
+      run(async () => {
+        try {
+          await api("/api/password", { oldPassword: $("#op", m).value, newPassword: $("#p1", m).value });
+        } catch (er) { $("#pferr", m).innerHTML = `<div class="msg err">${esc(er.message)}</div>`; throw er; }
+        S.user.seeded = false; closeModal(); render();
+      }, "Password diganti");
+    });
+  }, "sm");
+}
+
+// ---------- events ----------
+function bindMain() {
+  const app = $("#app");
+  app.querySelectorAll("[data-tab]").forEach((b) => b.addEventListener("click", () => {
+    S.tab = b.dataset.tab; render(); run(async () => { await refreshTab(); render(); });
+  }));
+  app.querySelectorAll("[data-mode]").forEach((b) => b.addEventListener("click", () => { S.mode = b.dataset.mode; render(); }));
+  app.querySelectorAll("[data-act]").forEach((b) => b.addEventListener("click", () => onAct(b)));
+}
+async function onAct(b) {
+  const a = b.dataset.act, n = b.dataset.n, u = b.dataset.u;
+  const tr = b.closest("tr");
+  const uid = tr && tr.dataset.uid;
+  const post = (path, body, msg) => run(async () => { const j = await api(path, body); if (j.overlay) S.ov = j.overlay; render(); }, msg);
+  switch (a) {
+    case "logout": await run(async () => { await api("/api/logout", {}); }); S.user = null; S.raw = S.ov = S.accounts = S.log = null; render(); break;
+    case "pw": passwordForm(); break;
+    case "reload": run(async () => { await refreshTab(); render(); }, "Data dimuat ulang"); break;
+    case "edit": editSession(n); break;
+    case "del":
+      if (await confirmBox(`Hapus sesi #${n}?`, "Sesi ini akan disembunyikan dari website. Bisa dipulihkan kembali dari panel ini.", "Hapus", true))
+        post("/api/admin/session/delete", { mode: S.mode, sessionNumber: Number(n) }, `Sesi #${n} dihapus`);
+      break;
+    case "restore": post("/api/admin/session/restore", { mode: S.mode, sessionNumber: Number(n) }, `Sesi #${n} dipulihkan`); break;
+    case "revert":
+      if (await confirmBox(`Batalkan edit sesi #${n}?`, "Sesi kembali ke data asli dari game.", "Batalkan Edit"))
+        post("/api/admin/session/revert", { mode: S.mode, sessionNumber: Number(n) }, `Edit sesi #${n} dibatalkan`);
+      break;
+    case "lbsave": {
+      const v = (f) => tr.querySelector(`[data-f="${f}"]`).value;
+      const body = { userId: Number(uid), displayName: v("displayName"), totalPoints: Number(v("totalPoints")) };
+      if (v("sessionCount") !== "") body.sessionCount = Number(v("sessionCount"));
+      post("/api/admin/leaderboard/save", body, "Klasemen disimpan");
+      break;
+    }
+    case "lbrevert": post("/api/admin/leaderboard/revert", { userId: Number(uid) }, "Edit dibatalkan"); break;
+    case "lbdel":
+      if (await confirmBox("Hapus dari klasemen?", "Pembalap ini disembunyikan dari klasemen liga. Bisa dipulihkan.", "Hapus", true))
+        post("/api/admin/leaderboard/delete", { userId: Number(uid) }, "Dihapus dari klasemen");
+      break;
+    case "lbrestore": post("/api/admin/leaderboard/restore", { userId: Number(uid) }, "Dipulihkan"); break;
+    case "newacct": accountForm("new"); break;
+    case "reset": accountForm("reset", u); break;
+    case "delacct":
+      if (await confirmBox(`Hapus akun ${u}?`, "Akun admin ini tidak bisa login lagi.", "Hapus Akun", true))
+        run(async () => { await api("/api/super/accounts/delete", { username: u }); await loadAccounts(); render(); }, `Akun ${u} dihapus`);
+      break;
+  }
+}
+
+// ---------- mulai ----------
+(async () => {
+  render();
+  try {
+    const j = await api("/api/me");
+    S.user = j.user;
+    await refreshTab();
+  } catch {
+    S.user = null;
+    try { S.setup = await (await fetch("/api/setup")).json(); } catch {}
+  }
+  render();
+})();
+})();
+</script>
+</body>
+</html>

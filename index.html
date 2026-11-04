@@ -430,7 +430,7 @@ function render() {
 
   html += `
   <footer class="panel"><div class="f"><img src="logo-vg.png" alt="">© 2026 VIGIB Community · VIGIB OBSTACLE</div>
-    <div class="f"><span>Diperbarui otomatis tiap 30 detik</span><span>•</span><a href="${ROBLOX_GAME_URL}" target="_blank" rel="noopener">Main di Roblox</a></div></footer>
+    <div class="f"><span>Diperbarui otomatis tiap 30 detik</span><span>•</span><a href="${ROBLOX_GAME_URL}" target="_blank" rel="noopener">Main di Roblox</a><span>•</span><a href="admin.html">Admin</a></div></footer>
   ${S.toast ? `<div class="panel toast">${ico("sparkles")}<span>${esc(S.toast)}</span></div>` : ""}`;
 
   // simpan fokus & posisi kursor pencarian
@@ -487,9 +487,17 @@ async function loadAvatars() {
 }
 async function load() {
   try {
-    const r = await fetch("data.json?t=" + Date.now(), { cache: "no-store" });
-    if (!r.ok) throw new Error("Data belum tersedia (" + r.status + ")");
-    const j = await r.json();
+    // /api/data = data.json + perubahan dari panel admin (Cloudflare). Cadangan: data.json langsung.
+    let j = null;
+    try {
+      const ra = await fetch("/api/data?t=" + Date.now(), { cache: "no-store" });
+      if (ra.ok && (ra.headers.get("content-type") || "").includes("json")) j = await ra.json();
+    } catch {}
+    if (!j || !j.modes) {
+      const r = await fetch("data.json?t=" + Date.now(), { cache: "no-store" });
+      if (!r.ok) throw new Error("Data belum tersedia (" + r.status + ")");
+      j = await r.json();
+    }
     j.modes = j.modes || {};
     ["liga", "normal", "team"].forEach((k) => {
       const m = j.modes[k] || (j.modes[k] = {});
