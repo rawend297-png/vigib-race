@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VIGIB Race · Buku Juara & Klasemen Live</title>
+<meta name="description" content="Klasemen dan riwayat race VIGIB OBSTACLE — Race Liga, Normal, dan Team, langsung dari Buku Juara di dalam game.">
+<meta name="theme-color" content="#100d0a">
+<meta property="og:title" content="VIGIB Race · Buku Juara & Klasemen Live">
+<meta property="og:description" content="Klasemen Liga, Race Normal & Team dari VIGIB OBSTACLE.">
+<meta property="og:image" content="logo-vg.png">
+<link rel="icon" type="image/png" href="logo-vg.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Cinzel:wght@700;800;900&display=swap" rel="stylesheet">
+<style>
+:root{
+  --base:#100d0a; --deep:#0b0907; --card:#221d17; --card2:#2e271d; --line:#584832;
+  --gold:#e2ba70; --hi:#ffecc4; --lo:#966c30; --ivory:#faf3e4; --muted:#b0a696; --ink:#1c160e;
+  --sage:#9cc79a; --rose:#e58a7a;
+  --display:'Cinzel', Georgia, serif; --sans:'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{
+  min-height:100vh; background:var(--base); color:var(--ivory); font-family:var(--sans); font-size:14px;
+  background-image:
+    radial-gradient(circle at 12% 8%, rgba(226,186,112,.10) 0%, transparent 38%),
+    radial-gradient(circle at 88% 92%, rgba(150,108,48,.12) 0%, transparent 42%),
+    radial-gradient(circle at 50% 120%, rgba(255,236,196,.05) 0%, transparent 50%);
+  background-attachment:fixed;
+}
+.watermark{position:fixed;inset:0;pointer-events:none;z-index:0;background:url('logo-vg.png') no-repeat center 55%/min(70vw,720px);opacity:.035}
+.wrap{position:relative;z-index:1;max-width:1240px;margin:0 auto;padding:24px 20px;display:flex;flex-direction:column;gap:22px}
+.panel{background:linear-gradient(180deg,rgba(46,39,29,.80),rgba(34,29,23,.84));backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border:1px solid rgba(226,186,112,.18);border-radius:18px}
+.gold-text{background:linear-gradient(180deg,#ffecc4 0%,#e2ba70 55%,#966c30 100%);-webkit-background-clip:text;background-clip:text;color:transparent}
+.gold-btn{background:linear-gradient(180deg,#ffecc4 0%,#e2ba70 100%);color:var(--ink)}
+.gold-line{height:1px;background:linear-gradient(90deg,transparent,rgba(226,186,112,.6),transparent)}
+.ico{width:16px;height:16px;flex-shrink:0;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.cinzel{font-family:var(--display)}
+.muted{color:var(--muted)} .gold{color:var(--gold)} .sage{color:var(--sage)} .hi{color:var(--hi)}
+
+/* header */
+header.panel{position:relative;overflow:hidden;padding:20px 24px;display:flex;gap:16px;align-items:center;justify-content:space-between;flex-wrap:wrap}
+header .glow{position:absolute;right:-40px;top:-40px;width:200px;height:200px;border-radius:50%;background:rgba(226,186,112,.10);filter:blur(40px);pointer-events:none}
+.brand{display:flex;align-items:center;gap:16px}
+.brand img{width:64px;height:64px;filter:drop-shadow(0 0 18px rgba(226,186,112,.35));animation:float 6s ease-in-out infinite}
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}}
+.brand h1{margin:0;font-family:var(--display);font-weight:900;font-size:30px;letter-spacing:.06em;line-height:1.1}
+.brand p{margin:4px 0 0;color:var(--muted);font-size:13px}
+.title-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.live{display:inline-flex;align-items:center;gap:6px;padding:2px 10px;border-radius:99px;font-size:12px;font-weight:600;border:1px solid}
+.live.on{background:rgba(156,199,154,.1);color:var(--sage);border-color:rgba(156,199,154,.3)}
+.live.off{background:rgba(229,138,122,.1);color:var(--rose);border-color:rgba(229,138,122,.3)}
+.live .dot{width:6px;height:6px;border-radius:50%;background:currentColor;animation:pulse 2s ease-in-out infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
+.tabs{display:flex;gap:6px;flex-wrap:wrap;background:rgba(11,9,7,.7);padding:6px;border-radius:12px;border:1px solid rgba(88,72,50,.7)}
+.tab{display:flex;align-items:center;gap:8px;padding:8px 14px;border-radius:9px;font-size:13px;font-weight:600;color:var(--muted);background:none;border:0;cursor:pointer;text-decoration:none;font-family:var(--sans);transition:.15s}
+.tab:hover{color:var(--ivory);background:rgba(46,39,29,.7)}
+.tab.active{background:linear-gradient(180deg,#ffecc4 0%,#e2ba70 100%);color:var(--ink);box-shadow:0 4px 14px rgba(226,186,112,.2)}
+
+/* mode */
+.modes{display:flex;justify-content:center}
+.modes .panel{display:inline-flex;gap:4px;padding:5px;border-radius:13px}
+.mode{display:flex;align-items:center;gap:8px;padding:9px 22px;border-radius:9px;font-family:var(--display);font-weight:800;letter-spacing:.14em;font-size:13px;color:var(--muted);background:none;border:0;cursor:pointer;transition:.15s}
+.mode:hover{color:var(--ivory)}
+.mode.active{background:linear-gradient(180deg,#ffecc4 0%,#e2ba70 100%);color:var(--ink)}
+.mode .count{font-family:var(--sans);letter-spacing:0;font-size:10px;padding:1px 6px;border-radius:5px;background:var(--card2)}
+.mode.active .count{background:rgba(28,22,14,.15)}
+
+/* stats */
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
+.stat{padding:16px;display:flex;align-items:center;justify-content:space-between;gap:12px;border-radius:14px}
+.stat .k{font-size:11px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.08em}
+.stat .v{font-family:var(--display);font-weight:800;font-size:18px;margin:3px 0 1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.stat .s{font-size:12px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.stat .badge{width:40px;height:40px;border-radius:10px;background:rgba(226,186,112,.1);border:1px solid rgba(226,186,112,.25);display:flex;align-items:center;justify-content:center;color:var(--gold);flex-shrink:0}
+.stat .badge .ico{width:20px;height:20px}
+.stat>div:first-child{min-width:0}
+
+/* main panel */
+.main{padding:22px 24px;display:flex;flex-direction:column;gap:18px}
+.main-head{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.main-head h2{margin:0;font-family:var(--display);font-size:20px;font-weight:800;display:flex;align-items:center;gap:8px}
+.main-head h2 .ico{width:20px;height:20px;color:var(--gold)}
+.filters{display:flex;gap:12px;justify-content:space-between;align-items:center;flex-wrap:wrap}
+.search{position:relative;flex:1;max-width:420px;min-width:200px}
+.search .ico{position:absolute;left:13px;top:50%;transform:translateY(-50%);color:var(--muted)}
+input,select{background:rgba(11,9,7,.8);border:1px solid var(--line);border-radius:11px;color:var(--ivory);font-family:var(--sans);font-size:13px;outline:none}
+input{width:100%;padding:9px 14px 9px 38px}
+input::placeholder{color:rgba(176,166,150,.7)}
+input:focus,select:focus{border-color:var(--gold)}
+select{padding:8px 10px;font-size:12px}
+.ctrl{display:flex;align-items:center;gap:8px}
+.ibtn{padding:8px;background:rgba(11,9,7,.8);border:1px solid var(--line);border-radius:11px;color:var(--muted);cursor:pointer;display:flex}
+.ibtn:hover{color:var(--gold)}
+
+/* podium */
+.podium{display:flex;align-items:flex-end;justify-content:center;gap:22px;padding-top:14px}
+.pcol{display:flex;flex-direction:column;align-items:center;width:130px}
+.pcol .who{font-weight:700;font-size:13px;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-top:8px}
+.pcol .val{font-size:11px;color:var(--gold);font-weight:600}
+.pcol .crown{color:var(--gold);width:24px;height:24px;margin-bottom:-2px}
+.step{margin-top:8px;width:100%;border-radius:12px 12px 0 0;border:1px solid rgba(226,186,112,.3);display:flex;justify-content:center;padding-top:8px;background:linear-gradient(180deg,var(--card2),rgba(34,29,23,.4))}
+.step.first{background:linear-gradient(180deg,rgba(226,186,112,.4),rgba(226,186,112,.05))}
+.step span{font-family:var(--display);font-weight:900;font-size:22px}
+
+/* avatar */
+.av{border-radius:50%;background:var(--card2);border:1px solid var(--line);overflow:hidden;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:10px;font-weight:700;color:var(--muted)}
+.av img{width:100%;height:100%;object-fit:cover}
+.av.big{border:2px solid var(--gold)}
+.team-av{border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:var(--display);font-weight:900;border:2px solid var(--gold)}
+
+/* table */
+.tbl-wrap{overflow-x:auto;border:1px solid rgba(88,72,50,.8);border-radius:13px}
+table{width:100%;border-collapse:collapse;font-size:14px}
+thead{background:rgba(11,9,7,.8)}
+th{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-weight:600;padding:13px 16px;text-align:center;border-bottom:1px solid rgba(88,72,50,.8);white-space:nowrap}
+th.l,td.l{text-align:left} th.r,td.r{text-align:right;padding-right:24px}
+td{padding:14px 16px;text-align:center;border-bottom:1px solid rgba(88,72,50,.35);font-weight:500}
+tbody tr{transition:background .15s}
+tbody tr:hover{background:rgba(46,39,29,.5)}
+tbody tr:hover .nm{color:var(--gold)}
+.who-cell{display:flex;align-items:center;gap:12px;min-width:0}
+.nm{font-weight:700;transition:color .15s}
+.sub{font-size:11px;color:var(--muted)}
+.rank{display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:50%;font-weight:900;font-size:12px}
+.rank.r1{background:linear-gradient(180deg,#ffecc4,#e2ba70);color:var(--ink);box-shadow:0 4px 12px rgba(226,186,112,.25)}
+.rank.r2{background:#d9d4cb;color:var(--ink)} .rank.r3{background:var(--lo);color:var(--hi)}
+.rank.rn{color:var(--muted);font-weight:700}
+.pts{font-family:var(--display);font-weight:800;font-size:15px;background:rgba(11,9,7,.8);border:1px solid var(--line);padding:4px 12px;border-radius:9px;white-space:nowrap}
+.pts small{font-family:var(--sans);font-size:10px;color:var(--gold);font-weight:700}
+.tbar{width:12px;height:36px;border-radius:99px;flex-shrink:0}
+
+/* history */
+.sess{background:rgba(11,9,7,.6);border:1px solid rgba(88,72,50,.7);border-radius:13px;padding:16px;display:flex;flex-direction:column;gap:12px;transition:border-color .15s}
+.sess:hover{border-color:rgba(226,186,112,.4)}
+.sess-top{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+.sess-no{width:46px;height:46px;border-radius:11px;display:flex;align-items:center;justify-content:center;font-family:var(--display);font-weight:900;font-size:14px}
+.tagm{font-size:10px;margin-left:6px;padding:2px 8px;border-radius:5px;background:rgba(226,186,112,.15);color:var(--gold);font-weight:700;letter-spacing:.08em}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{display:inline-flex;align-items:center;gap:8px;padding:6px 12px;border-radius:9px;background:rgba(46,39,29,.7);border:1px solid rgba(88,72,50,.7);font-size:12px}
+.dotc{width:8px;height:8px;border-radius:50%}
+.champs{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.champ{display:flex;align-items:center;gap:10px;border-radius:10px;padding:8px 12px;border:1px solid rgba(88,72,50,.6);background:rgba(34,29,23,.6);min-width:0}
+.champ.first{border-color:rgba(226,186,112,.5);background:rgba(226,186,112,.1)}
+.champ .md{width:24px;text-align:center;font-size:16px}
+.champ .nm{flex:1;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.champ .plus{font-family:var(--display);font-weight:800;font-size:12px;color:var(--sage)}
+
+.empty{padding:56px 0;display:flex;flex-direction:column;align-items:center;gap:12px;text-align:center}
+.empty img{width:80px;height:80px;opacity:.6}
+.empty p{color:var(--muted);max-width:420px;margin:0}
+.err{padding:14px 18px;color:var(--rose);display:flex;gap:8px;align-items:center;border-color:rgba(229,138,122,.4)}
+
+footer.panel{padding:16px 20px;display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;font-size:12px;color:var(--muted)}
+footer a{color:var(--muted);text-decoration:none} footer a:hover{color:var(--gold)}
+footer .f{display:flex;align-items:center;gap:8px}
+footer img{width:20px;height:20px}
+
+.toast{position:fixed;top:20px;right:20px;z-index:50;display:flex;align-items:center;gap:10px;padding:12px 16px;border-radius:12px;border-color:rgba(226,186,112,.5)!important;box-shadow:0 10px 40px rgba(0,0,0,.5);animation:tin .35s ease-out}
+.toast .ico{color:var(--gold);width:20px;height:20px}
+@keyframes tin{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:none}}
+#confetti{position:fixed;inset:0;pointer-events:none;z-index:60}
+
+@media (max-width:900px){
+  .stats{grid-template-columns:repeat(2,1fr)}
+  .champs{grid-template-columns:repeat(2,1fr)}
+}
+@media (max-width:600px){
+  .wrap{padding:14px 12px;gap:16px}
+  header.panel{padding:16px;justify-content:center}
+  .brand img{width:52px;height:52px}
+  .brand h1{font-size:22px}
+  .tab{padding:7px 10px;font-size:12px}
+  .mode{padding:8px 12px;font-size:11px;letter-spacing:.08em}
+  .main{padding:16px}
+  .stat{padding:12px}
+  .stat .v{font-size:15px}
+  .pcol{width:96px}
+  .podium{gap:10px}
+  .champs{grid-template-columns:1fr}
+  th,td{padding:11px 10px}
+}
+</style>
+</head>
+<body>
+<div class="watermark"></div>
+<canvas id="confetti"></canvas>
+<div class="wrap" id="app"></div>
+
+<script>
+(() => {
+"use strict";
+const ROBLOX_GAME_URL = "https://www.roblox.com/games/81010900767282";
+const REFRESH_MS = 30000;
+const MODE_INFO = {
+  liga:   { label: "LIGA",   long: "Race Liga",   icon: "trophy" },
+  normal: { label: "NORMAL", long: "Race Normal", icon: "flag" },
+  team:   { label: "TEAM",   long: "Race Team",   icon: "users" },
+};
+const MEDAL = { 1: "🥇", 2: "🥈", 3: "🥉" };
+
+// ---------- ikon (gaya Lucide) ----------
+const P = {
+  trophy: '<path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/>',
+  flag: '<path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" x2="4" y1="22" y2="15"/>',
+  users: '<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>',
+  book: '<path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>',
+  game: '<line x1="6" x2="10" y1="11" y2="11"/><line x1="8" x2="8" y1="9" y2="13"/><line x1="15" x2="15.01" y1="12" y2="12"/><line x1="18" x2="18.01" y1="10" y2="10"/><path d="M17.32 5H6.68a4 4 0 0 0-3.978 3.59c-.006.052-.01.101-.017.152C2.604 9.416 2 14.456 2 16a3 3 0 0 0 3 3c1 0 1.5-.5 2-1l1.414-1.414A2 2 0 0 1 9.828 16h4.344a2 2 0 0 1 1.414.586L17 18c.5.5 1 1 2 1a3 3 0 0 0 3-3c0-1.545-.604-6.584-.685-7.258-.007-.05-.011-.1-.017-.151A4 4 0 0 0 17.32 5z"/>',
+  crown: '<path d="m2 4 3 12h14l3-12-6 7-4-7-4 7-6-7zm3 16h14"/>',
+  bookmark: '<path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"/><polyline points="10 2 10 10 13 7 16 10 16 2"/>',
+  refresh: '<path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/>',
+  search: '<circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>',
+  up: '<path d="m5 12 7-7 7 7"/><path d="M12 19V5"/>',
+  down: '<path d="M12 5v14"/><path d="m19 12-7 7-7-7"/>',
+  calendar: '<rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/>',
+  sparkles: '<path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3Z"/>',
+  alert: '<path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" x2="12" y1="9" y2="13"/><line x1="12" x2="12.01" y1="17" y2="17"/>',
+};
+const ico = (n, cls = "") => `<svg class="ico ${cls}" viewBox="0 0 24 24" aria-hidden="true">${P[n] || ""}</svg>`;
+
+// ---------- util ----------
+const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const fmtDate = (unix) => {
+  if (!unix) return "-";
+  const d = new Date(unix * 1000);
+  return d.toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "numeric" }) + " · " +
+         d.toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" });
+};
+const timeAgo = (ms) => {
+  if (!ms) return "belum ada";
+  const s = Math.max(0, Math.floor((Date.now() - ms) / 1000));
+  if (s < 60) return "baru saja";
+  if (s < 3600) return Math.floor(s / 60) + " menit lalu";
+  if (s < 86400) return Math.floor(s / 3600) + " jam lalu";
+  return Math.floor(s / 86400) + " hari lalu";
+};
+
+// ---------- state ----------
+const S = { data: null, error: null, lastFetch: 0, avatars: {}, tab: "standings", mode: "liga", q: "", sortBy: "default", order: "desc", known: null };
+
+// ---------- hitung klasemen ----------
+function playerStandings(mode, md) {
+  const sessions = (md && md.sessions) || [];
+  const map = new Map();
+  const get = (uid, name) => {
+    const k = String(uid);
+    if (!map.has(k)) map.set(k, { userId: k, username: name || ("Player_" + k), points: 0, wins: 0, podiums: 0, finishes: 0, sessions: 0 });
+    const e = map.get(k);
+    if (name) e.username = name;
+    return e;
+  };
+  [...sessions].sort((a, b) => a.sessionNumber - b.sessionNumber).forEach((s) => {
+    (s.participants || []).forEach((p) => { get(p.userId, p.displayName).sessions += 1; });
+    (s.champions || []).forEach((c) => {
+      const e = get(c.userId, c.displayName);
+      e.finishes += 1;
+      if (c.rank === 1) e.wins += 1;
+      if (c.rank >= 1 && c.rank <= 3) e.podiums += 1;
+    });
+    if (mode === "liga") (s.ligaPoints || []).forEach((l) => { get(l.userId, l.displayName).points += Number(l.points) || 0; });
+  });
+  // klasemen liga resmi dari game (akumulatif) diutamakan
+  if (mode === "liga" && md && Array.isArray(md.ligaLeaderboard) && md.ligaLeaderboard.length) {
+    map.forEach((e) => { e.points = 0; });
+    md.ligaLeaderboard.forEach((l) => { get(l.userId, l.displayName).points = Number(l.totalPoints) || 0; });
+  }
+  return [...map.values()];
+}
+function teamStandings(md) {
+  const sessions = (md && md.sessions) || [];
+  const map = new Map();
+  [...sessions].sort((a, b) => a.sessionNumber - b.sessionNumber).forEach((s) => {
+    const teams = [...(s.teamData || [])].sort((a, b) => (b.points || 0) - (a.points || 0));
+    teams.forEach((t, i) => {
+      const k = (t.name || "TIM").toUpperCase();
+      if (!map.has(k)) map.set(k, { name: t.name || "TIM", colorHex: t.colorHex || "#e2ba70", points: 0, wins: 0, sessions: 0, members: 0 });
+      const e = map.get(k);
+      e.points += Number(t.points) || 0;
+      e.sessions += 1;
+      if (i === 0 && (t.points || 0) > 0) e.wins += 1;
+      if (t.colorHex) e.colorHex = t.colorHex;
+      e.members = Math.max(e.members, t.memberCount || 0);
+    });
+  });
+  return [...map.values()];
+}
+function computeRows() {
+  const md = (S.data && S.data.modes && S.data.modes[S.mode]) || { sessions: [] };
+  const list = S.mode === "team" ? teamStandings(md) : playerStandings(S.mode, md);
+  const base = [...list].sort((a, b) =>
+    S.mode === "normal" ? (b.wins - a.wins) || (b.podiums - a.podiums) || (b.finishes - a.finishes)
+                        : (b.points - a.points) || (b.wins - a.wins));
+  base.forEach((r, i) => { r.rank = i + 1; });
+  const key = S.sortBy === "default" ? (S.mode === "normal" ? "wins" : "points") : S.sortBy;
+  const q = S.q.toLowerCase();
+  const rows = base
+    .filter((r) => !q || (r.username || r.name || "").toLowerCase().includes(q) || String(r.userId || "").includes(q))
+    .sort((a, b) => (S.order === "asc" ? a[key] - b[key] : b[key] - a[key]) || (a.rank - b.rank));
+  return { md, ranked: base, rows };
+}
+const valueOf = (d) => S.mode === "normal" ? `${d.wins}× Juara 1` : `${d.points} PTS`;
+
+// ---------- potongan tampilan ----------
+function avatar(userId, name, size = 36, big = false) {
+  const src = S.avatars[String(userId)];
+  const inner = src ? `<img src="${esc(src)}" alt="${esc(name)}" loading="lazy">` : esc((name || "?").slice(0, 2).toUpperCase());
+  return `<div class="av${big ? " big" : ""}" style="width:${size}px;height:${size}px">${inner}</div>`;
+}
+function rankBadge(r) {
+  return r <= 3 ? `<span class="rank r${r}">${r}</span>` : `<span class="rank rn">#${r}</span>`;
+}
+function stat(label, value, sub, icon, cls = "gold") {
+  return `<div class="panel stat"><div><div class="k">${esc(label)}</div><div class="v cinzel">${esc(value)}</div><div class="s ${cls}">${esc(sub)}</div></div><div class="badge">${ico(icon)}</div></div>`;
+}
+function empty(text) {
+  return `<div class="empty"><img src="logo-vg.png" alt="VG"><p>${esc(text)}</p></div>`;
+}
+function podium(top) {
+  if (!top.length) return "";
+  const order = [[top[1], 2, 80], [top[0], 1, 112], [top[2], 3, 64]];
+  return `<div class="podium">${order.map(([d, rank, h]) => {
+    if (!d) return `<div class="pcol"></div>`;
+    const sz = rank === 1 ? 76 : 60;
+    const face = S.mode === "team"
+      ? `<div class="team-av" style="width:${sz}px;height:${sz}px;background:${esc(d.colorHex)}33;color:${esc(d.colorHex)}">${esc((d.name || "?").slice(0, 2).toUpperCase())}</div>`
+      : avatar(d.userId, d.username, sz, rank === 1);
+    return `<div class="pcol">${rank === 1 ? ico("crown", "crown") : ""}${face}
+      <div class="who">${esc(d.username || d.name)}</div><div class="val">${esc(valueOf(d))}</div>
+      <div class="step${rank === 1 ? " first" : ""}" style="height:${h}px"><span class="gold-text">${rank}</span></div></div>`;
+  }).join("")}</div>`;
+}
+
+// ---------- render ----------
+function render() {
+  const { md, ranked, rows } = computeRows();
+  const sessions = md.sessions || [];
+  const leader = ranked[0];
+  const totalAll = Object.values((S.data && S.data.modes) || {}).reduce((n, m) => n + ((m.sessions && m.sessions.length) || 0), 0);
+  const uniq = new Set(); sessions.forEach((x) => (x.participants || []).forEach((p) => uniq.add(p.userId)));
+  const live = S.lastFetch && !S.error && (Date.now() - S.lastFetch < REFRESH_MS * 2.5);
+  const mi = MODE_INFO[S.mode];
+  const counts = (m) => (S.data && S.data.modes && S.data.modes[m] && S.data.modes[m].sessions.length) || 0;
+  const SORTS = S.mode === "liga"
+    ? [["default", "Total Poin"], ["wins", "Juara 1"], ["podiums", "Podium (Top 3)"], ["sessions", "Sesi Diikuti"]]
+    : S.mode === "team"
+    ? [["default", "Total Poin"], ["wins", "Menang Sesi"], ["sessions", "Sesi Diikuti"]]
+    : [["default", "Juara 1"], ["podiums", "Podium (Top 3)"], ["finishes", "Total Finish"], ["sessions", "Sesi Diikuti"]];
+
+  let html = `
+  <header class="panel"><div class="glow"></div>
+    <div class="brand"><img src="logo-vg.png" alt="Logo VG">
+      <div><div class="title-row"><h1><span class="gold-text">VIGIB</span> RACE</h1>
+        <span class="live ${live ? "on" : "off"}"><span class="dot"></span>${live ? "Live" : (S.error ? "Offline" : "Memuat")}</span></div>
+        <p>Buku Juara &amp; Klasemen langsung dari <b class="gold">VIGIB OBSTACLE</b></p></div>
+    </div>
+    <nav class="tabs">
+      <button class="tab ${S.tab === "standings" ? "active" : ""}" data-tab="standings">${ico("trophy")}Klasemen</button>
+      <button class="tab ${S.tab === "history" ? "active" : ""}" data-tab="history">${ico("book")}Riwayat Sesi</button>
+      <a class="tab" href="${ROBLOX_GAME_URL}" target="_blank" rel="noopener">${ico("game")}Main</a>
+    </nav>
+  </header>
+
+  <div class="modes"><div class="panel">${Object.entries(MODE_INFO).map(([k, v]) =>
+    `<button class="mode ${S.mode === k ? "active" : ""}" data-mode="${k}">${ico(v.icon)}${v.label}<span class="count">${counts(k)}</span></button>`).join("")}</div></div>
+
+  <div class="stats">
+    ${stat(S.mode === "team" ? "Tim Teratas" : "Pemimpin Klasemen", leader ? (leader.username || leader.name) : "-", leader ? valueOf(leader) : "belum ada data", "crown")}
+    ${stat("Sesi " + mi.long, sessions.length, totalAll + " sesi semua mode", "bookmark", "hi")}
+    ${stat("Pembalap Terdata", uniq.size, "peserta mode ini", "users", "sage")}
+    ${stat("Update Terakhir", timeAgo(md.updatedAt), md.sentBy ? "dikirim " + md.sentBy.displayName : "dari Buku Juara", "refresh", "muted")}
+  </div>
+  ${S.error ? `<div class="panel err">${ico("alert")} Gagal memuat data: ${esc(S.error)}</div>` : ""}`;
+
+  if (S.tab === "standings") {
+    const head = S.mode === "team"
+      ? `<tr><th style="width:64px">Rank</th><th class="l">Tim</th><th>Sesi</th><th>Menang Sesi 🏆</th><th>Anggota</th><th class="r">Total Poin</th></tr>`
+      : `<tr><th style="width:64px">Rank</th><th class="l">Pembalap</th><th>Sesi Diikuti</th><th>Juara 1 🏆</th><th>Podium 🥇🥈🥉</th><th class="r">${S.mode === "liga" ? "Poin Liga" : "Total Finish"}</th></tr>`;
+    const body = !rows.length
+      ? `<tr><td colspan="6">${empty(S.data ? `Belum ada data ${mi.long}. Tekan tombol KIRIM KE WEB di Buku Juara dalam game.` : "Memuat data...")}</td></tr>`
+      : rows.map((r) => S.mode === "team"
+        ? `<tr><td>${rankBadge(r.rank)}</td><td class="l"><div class="who-cell"><span class="tbar" style="background:${esc(r.colorHex)}"></span><span class="nm">${esc(r.name)}</span></div></td>
+            <td class="muted">${r.sessions}</td><td><b class="gold">${r.wins}</b></td><td class="muted">${r.members}</td>
+            <td class="r"><span class="pts">${r.points} <small>PTS</small></span></td></tr>`
+        : `<tr><td>${rankBadge(r.rank)}</td><td class="l"><div class="who-cell">${avatar(r.userId, r.username)}<div style="min-width:0"><div class="nm">${esc(r.username)}</div><div class="sub">ID: ${esc(r.userId)}</div></div></div></td>
+            <td class="muted">${r.sessions}</td><td><b class="gold">${r.wins}</b></td><td class="muted">${r.podiums}</td>
+            <td class="r"><span class="pts">${S.mode === "liga" ? r.points : r.finishes} <small>${S.mode === "liga" ? "PTS" : "FINISH"}</small></span></td></tr>`).join("");
+    html += `
+    <main class="panel main">
+      <div class="main-head"><h2>${ico(mi.icon)}Klasemen ${mi.long}</h2>
+        <span class="muted" style="font-size:12px">${S.mode === "liga" ? "Total poin liga akumulatif" : S.mode === "team" ? "Jumlah poin tim dari semua sesi" : "Diurutkan dari jumlah Juara 1"}</span></div>
+      ${podium(ranked.slice(0, 3))}
+      <div class="gold-line"></div>
+      <div class="filters">
+        <div class="search">${ico("search")}<input id="q" type="text" value="${esc(S.q)}" placeholder="${S.mode === "team" ? "Cari nama tim..." : "Cari nama pembalap atau UserId..."}"></div>
+        <div class="ctrl"><span class="muted" style="font-size:12px">Urutkan:</span>
+          <select id="sort">${SORTS.map(([v, l]) => `<option value="${v}" ${S.sortBy === v ? "selected" : ""}>${l}</option>`).join("")}</select>
+          <button class="ibtn" id="order" title="Ubah urutan">${ico(S.order === "asc" ? "up" : "down")}</button>
+          <button class="ibtn" id="reload" title="Muat ulang">${ico("refresh")}</button>
+        </div>
+      </div>
+      <div class="tbl-wrap"><table><thead>${head}</thead><tbody>${body}</tbody></table></div>
+    </main>`;
+  } else {
+    const cards = !sessions.length ? empty(S.data ? `Belum ada sesi ${mi.long}. Kirim dari Buku Juara di dalam game.` : "Memuat data...")
+      : sessions.map((s) => {
+        const champs = [...(s.champions || [])].sort((a, b) => a.rank - b.rank);
+        const pts = {}; (s.ligaPoints || []).forEach((l) => { pts[l.userId] = l.points; });
+        const teams = [...(s.teamData || [])].sort((a, b) => (b.points || 0) - (a.points || 0));
+        return `<div class="sess">
+          <div class="sess-top"><div class="who-cell"><div class="sess-no gold-btn">#${s.sessionNumber}</div>
+            <div><div style="font-weight:700">Sesi ${s.sessionNumber}<span class="tagm">${mi.label}</span></div>
+            <div class="sub" style="display:flex;align-items:center;gap:4px;margin-top:2px">${ico("calendar")}${fmtDate(s.timestamp)}</div></div></div>
+            <span class="muted" style="font-size:12px">${(s.participants || []).length} peserta · ${champs.length} juara${teams.length ? " · " + teams.length + " tim" : ""}</span></div>
+          ${teams.length ? `<div class="chips">${teams.map((t, i) => `<span class="chip"><span class="dotc" style="background:${esc(t.colorHex)}"></span><b>#${i + 1} ${esc(t.name)}</b><span class="gold" style="font-weight:600">${t.points} PTS</span></span>`).join("")}</div>` : ""}
+          ${!champs.length ? `<div class="muted" style="font-size:12px;font-style:italic">Tidak ada yang finish.</div>` :
+            `<div class="champs">${champs.map((c) => {
+              const p = pts[c.userId] ?? c.points;
+              return `<div class="champ${c.rank === 1 ? " first" : ""}"><span class="md">${MEDAL[c.rank] || `<span class="muted" style="font-size:12px;font-weight:700">#${c.rank}</span>`}</span>${avatar(c.userId, c.displayName, 32)}<span class="nm">${esc(c.displayName)}</span>${S.mode === "liga" && p != null ? `<span class="plus">+${esc(p)}</span>` : ""}</div>`;
+            }).join("")}</div>`}
+        </div>`;
+      }).join("");
+    html += `
+    <main class="panel main">
+      <div class="main-head" style="border-bottom:1px solid rgba(88,72,50,.7);padding-bottom:12px"><h2>${ico("book")}Buku Juara · ${mi.long}</h2><span class="muted" style="font-size:12px">${sessions.length} sesi tercatat</span></div>
+      <div style="display:flex;flex-direction:column;gap:12px">${cards}</div>
+    </main>`;
+  }
+
+  html += `
+  <footer class="panel"><div class="f"><img src="logo-vg.png" alt="">© 2026 VIGIB Community · VIGIB OBSTACLE</div>
+    <div class="f"><span>Diperbarui otomatis tiap 30 detik</span><span>•</span><a href="${ROBLOX_GAME_URL}" target="_blank" rel="noopener">Main di Roblox</a></div></footer>
+  ${S.toast ? `<div class="panel toast">${ico("sparkles")}<span>${esc(S.toast)}</span></div>` : ""}`;
+
+  // simpan fokus & posisi kursor pencarian
+  const active = document.activeElement && document.activeElement.id === "q";
+  const caret = active ? document.activeElement.selectionStart : null;
+  document.getElementById("app").innerHTML = html;
+  if (active) { const i = document.getElementById("q"); i.focus(); i.setSelectionRange(caret, caret); }
+}
+
+// ---------- event ----------
+document.getElementById("app").addEventListener("click", (e) => {
+  const t = e.target.closest("[data-tab],[data-mode],#order,#reload");
+  if (!t) return;
+  if (t.dataset.tab) S.tab = t.dataset.tab;
+  else if (t.dataset.mode) { if (S.mode !== t.dataset.mode) { S.mode = t.dataset.mode; S.sortBy = "default"; S.order = "desc"; S.q = ""; } }
+  else if (t.id === "order") S.order = S.order === "asc" ? "desc" : "asc";
+  else if (t.id === "reload") { load(); return; }
+  render();
+});
+document.getElementById("app").addEventListener("input", (e) => { if (e.target.id === "q") { S.q = e.target.value; render(); } });
+document.getElementById("app").addEventListener("change", (e) => { if (e.target.id === "sort") { S.sortBy = e.target.value; render(); } });
+
+// ---------- confetti emas (tanpa library) ----------
+function confetti() {
+  const cv = document.getElementById("confetti"), cx = cv.getContext("2d");
+  cv.width = innerWidth; cv.height = innerHeight;
+  const cols = ["#ffecc4", "#e2ba70", "#966c30", "#faf3e4"];
+  const ps = Array.from({ length: 140 }, () => ({ x: innerWidth / 2, y: innerHeight * .55, vx: (Math.random() - .5) * 14, vy: -Math.random() * 14 - 4, r: Math.random() * 6 + 3, c: cols[Math.random() * 4 | 0], a: Math.random() * 6, va: (Math.random() - .5) * .3 }));
+  let f = 0;
+  (function step() {
+    cx.clearRect(0, 0, cv.width, cv.height);
+    ps.forEach((p) => { p.vy += .35; p.vx *= .99; p.x += p.vx; p.y += p.vy; p.a += p.va;
+      cx.save(); cx.translate(p.x, p.y); cx.rotate(p.a); cx.fillStyle = p.c; cx.globalAlpha = Math.max(0, 1 - f / 150); cx.fillRect(-p.r / 2, -p.r / 4, p.r, p.r / 2); cx.restore(); });
+    if (++f < 150) requestAnimationFrame(step); else cx.clearRect(0, 0, cv.width, cv.height);
+  })();
+}
+function toast(msg) { S.toast = msg; render(); clearTimeout(toast.t); toast.t = setTimeout(() => { S.toast = null; render(); }, 4500); }
+
+// ---------- data ----------
+async function loadAvatars() {
+  const ids = new Set();
+  Object.values((S.data && S.data.modes) || {}).forEach((m) => {
+    (m.sessions || []).forEach((s) => {
+      (s.participants || []).forEach((p) => p.userId && ids.add(String(p.userId)));
+      (s.champions || []).forEach((c) => c.userId && ids.add(String(c.userId)));
+    });
+    (m.ligaLeaderboard || []).forEach((l) => l.userId && ids.add(String(l.userId)));
+  });
+  // avatar sudah disiapkan server Roblox di data.json
+  const map = (S.data && S.data.avatars && !Array.isArray(S.data.avatars)) ? S.data.avatars : {};
+  let changed = false;
+  ids.forEach((id) => { const v = map[id] || null; if (S.avatars[id] !== v) { S.avatars[id] = v; changed = true; } });
+  if (changed) render();
+}
+async function load() {
+  try {
+    const r = await fetch("data.json?t=" + Date.now(), { cache: "no-store" });
+    if (!r.ok) throw new Error("Data belum tersedia (" + r.status + ")");
+    const j = await r.json();
+    j.modes = j.modes || {};
+    ["liga", "normal", "team"].forEach((k) => {
+      const m = j.modes[k] || (j.modes[k] = {});
+      m.sessions = Array.isArray(m.sessions) ? m.sessions.slice().sort((a, b) => b.sessionNumber - a.sessionNumber) : [];
+      if (!Array.isArray(m.ligaLeaderboard) || !m.ligaLeaderboard.length) m.ligaLeaderboard = null;
+    });
+    S.data = j; S.error = null; S.lastFetch = Date.now();
+    const total = Object.values(j.modes || {}).reduce((n, m) => n + ((m.sessions && m.sessions.length) || 0), 0);
+    if (S.known !== null && total > S.known) { confetti(); toast(`🏆 ${total - S.known} sesi baru masuk dari Buku Juara!`); }
+    S.known = total;
+    // buka mode yang punya data kalau mode aktif masih kosong (kunjungan pertama)
+    if (!load.done) {
+      load.done = true;
+      if (!(j.modes[S.mode] && j.modes[S.mode].sessions.length)) {
+        const m = ["liga", "normal", "team"].find((k) => j.modes[k] && j.modes[k].sessions.length);
+        if (m) S.mode = m;
+      }
+    }
+  } catch (e) { S.error = e.message || String(e); }
+  render();
+  loadAvatars();
+}
+render();
+load();
+setInterval(load, REFRESH_MS);
+setInterval(render, 15000);
+})();
+</script>
+</body>
+</html>
