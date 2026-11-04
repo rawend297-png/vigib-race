@@ -21,6 +21,8 @@ const PBKDF2_ITER = 10000;
 const SESSION_TTL = 60 * 60 * 12; // 12 jam
 const LOGIN_MAX_FAIL = 10; // per IP per 15 menit
 const COOKIE = "vgadm";
+const GATE_COOKIE = "vggate";
+const GATE_TTL = 60 * 60 * 24 * 7; // kode akses berlaku 7 hari per perangkat
 
 // ---------- util ----------
 const json = (data, status = 200, extra = {}) =>
@@ -71,6 +73,9 @@ function getCookie(request, name) {
 const sessionCookie = (token, maxAge) =>
   `${COOKIE}=${token}; Path=/api; HttpOnly; Secure; SameSite=Strict; Max-Age=${maxAge}`;
 
+const gateCookie = (token, maxAge) =>
+  `${GATE_COOKIE}=${token}; Path=/; HttpOnly; Secure; SameSite=Strict; Max-Age=${maxAge}`;
+
 // ---------- KV helpers ----------
 async function kvJson(env, key, fallback = null) {
   const v = await env.RACE_KV.get(key);
@@ -117,6 +122,76 @@ async function getOverlay(env) {
   for (const k of Object.keys(base)) ov[k] = Object.assign(base[k], ov[k] || {});
   return ov;
 }
+
+// ---------- kode akses panel (gerbang sebelum login) ----------
+async function getGate(env) {
+  return kvJson(env, "gate:config");
+}
+async function gateOk(request, env) {
+  const gate = await getGate(env);
+  if (!gate) return true; // belum ada kode akses -> panel terbuka (hanya login)
+  const token = getCookie(request, GATE_COOKIE);
+  if (!token || !/^[0-9a-f]{64}$/.test(token)) return false;
+  const g = await kvJson(env, "gatetok:" + token);
+  return !!(g && g.ver === gate.ver);
+}
+async function handleGate(request, env) {
+  const gate = await getGate(env);
+  if (!gate) return json({ ok: true, open: true });
+  const ip = request.headers.get("cf-connecting-ip") || "0";
+  const rlKey = "rlg:" + ip;
+  const fails = int(await env.RACE_KV.get(rlKey), 0);
+  if (fails >= LOGIN_MAX_FAIL) return err("Terlalu banyak percobaan. Coba lagi 15 menit lagi.", 429);
+  const body = await readJson(request);
+  const code = typeof body.code === "string" ? body.code : "";
+  const ok = safeEqual(await pbkdf2(code, gate.salt, gate.iter || PBKDF2_ITER), gate.hash);
+  if (!ok) {
+    await env.RACE_KV.put(rlKey, String(fails + 1), { expirationTtl: 900 });
+    return err("Kode akses salah", 401);
+  }
+  const token = randHex(32);
+  await kvPut(env, "gatetok:" + token, { ver: gate.ver, at: Date.now() }, { expirationTtl: GATE_TTL });
+  return json({ ok: true }, 200, { "set-cookie": gateCookie(token, GATE_TTL) });
+}
+const validGateCode = (c) => typeof c === "string" && c.length >= 6 && c.length <= 64;
+
+const GATE_PAGE = `<!DOCTYPE html><html lang="id"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow"><title>Kode Akses · VIGIB Race</title><link rel="icon" type="image/png" href="logo-vg.png">
+<style>
+*{box-sizing:border-box}html,body{margin:0}
+body{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;background:#100d0a;color:#faf3e4;font-family:system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;
+background-image:radial-gradient(circle at 12% 8%,rgba(226,186,112,.10) 0%,transparent 38%),radial-gradient(circle at 88% 92%,rgba(150,108,48,.12) 0%,transparent 42%)}
+.c{width:100%;max-width:380px;padding:30px 26px;border-radius:16px;border:1px solid rgba(226,186,112,.18);background:linear-gradient(180deg,rgba(46,39,29,.82),rgba(34,29,23,.86));text-align:center;display:flex;flex-direction:column;gap:14px}
+img{width:76px;height:76px;margin:0 auto;filter:drop-shadow(0 0 18px rgba(226,186,112,.35))}
+h1{margin:0;font-family:Georgia,serif;letter-spacing:.06em;font-size:22px;background:linear-gradient(180deg,#ffecc4,#e2ba70 55%,#966c30);-webkit-background-clip:text;background-clip:text;color:transparent}
+p{margin:0;color:#b0a696;font-size:13px}
+input{width:100%;padding:11px 12px;border-radius:9px;border:1px solid rgba(88,72,50,.9);background:rgba(11,9,7,.75);color:#faf3e4;font-size:15px;text-align:center;letter-spacing:.12em;outline:none}
+input:focus{border-color:#e2ba70;box-shadow:0 0 0 3px rgba(226,186,112,.15)}
+button{padding:11px;border-radius:9px;border:0;background:linear-gradient(180deg,#ffecc4,#e2ba70);color:#1c160e;font-weight:700;font-size:14px;cursor:pointer}
+button:disabled{opacity:.6}
+.e{padding:9px 12px;border-radius:9px;font-size:13px;background:rgba(229,138,122,.1);border:1px solid rgba(229,138,122,.35);color:#e58a7a;display:none}
+a{color:#b0a696;font-size:12px;text-decoration:none}
+</style></head><body>
+<form class="c" id="f" autocomplete="off">
+<img src="logo-vg.png" alt="VG"><h1>PANEL ADMIN</h1><p>Masukkan kode akses khusus untuk membuka panel.</p>
+<div class="e" id="e"></div>
+<input id="k" type="password" placeholder="Kode akses" maxlength="64" required autofocus>
+<button id="b" type="submit">Buka Panel</button>
+<a href="./">← Kembali ke website</a>
+</form>
+<script>
+document.getElementById("f").addEventListener("submit", async (ev) => {
+  ev.preventDefault();
+  const b = document.getElementById("b"), e = document.getElementById("e");
+  b.disabled = true; e.style.display = "none";
+  try {
+    const r = await fetch("/api/gate", { method: "POST", headers: { "content-type": "application/json", "x-vigib": "1" }, body: JSON.stringify({ code: document.getElementById("k").value }) });
+    const j = await r.json().catch(() => ({}));
+    if (!r.ok || j.ok === false) throw new Error(j.error || ("HTTP " + r.status));
+    location.reload();
+  } catch (er) { e.textContent = er.message; e.style.display = "block"; b.disabled = false; }
+});
+</script></body></html>`;
 
 // ---------- auth ----------
 async function currentUser(request, env) {
@@ -297,6 +372,23 @@ async function adminAction(path, request, env, user) {
 }
 
 async function superAction(path, request, env, user) {
+  if (path === "/api/super/gate" && request.method === "GET") {
+    const g = await getGate(env);
+    return json({ ok: true, active: !!g, updatedAt: g ? g.updatedAt : null, updatedBy: g ? g.updatedBy : null });
+  }
+  if (path === "/api/super/gate") {
+    const body = await readJson(request);
+    if (!validGateCode(body.code)) throw new HttpError("Kode akses 6-64 karakter");
+    const old = await getGate(env);
+    const h = await makeHash(body.code);
+    await kvPut(env, "gate:config", { ...h, ver: ((old && old.ver) || 0) + 1, updatedAt: Date.now(), updatedBy: user.username });
+    await addLog(env, user.username, "akun", old ? "ganti kode akses panel" : "pasang kode akses panel");
+    // perangkat super admin ini langsung diberi akses baru supaya tidak terkunci sendiri
+    const g = await getGate(env);
+    const token = randHex(32);
+    await kvPut(env, "gatetok:" + token, { ver: g.ver, at: Date.now() }, { expirationTtl: GATE_TTL });
+    return json({ ok: true }, 200, { "set-cookie": gateCookie(token, GATE_TTL) });
+  }
   if (path === "/api/super/accounts" && request.method === "GET") {
     const list = [];
     let cursor;
@@ -381,6 +473,10 @@ async function handleApi(request, env, url) {
     }
   }
 
+  if (p === "/api/gate" && m === "POST") return handleGate(request, env);
+  // semua API panel (setup, login, admin, super) wajib lolos kode akses kalau kode sudah dipasang
+  if (!(await gateOk(request, env))) return err("Kode akses panel diperlukan", 403);
+
   if (p === "/api/setup" && m === "GET") return json({ ok: true, needed: await setupNeeded(env), username: SUPER_USERNAME });
   if (p === "/api/setup" && m === "POST") return handleSetup(request, env);
   if (p === "/api/login" && m === "POST") return handleLogin(request, env);
@@ -419,8 +515,12 @@ export default {
         return err("Kesalahan server: " + (e && e.message ? e.message : e), 500);
       }
     }
+    const isAdmin = url.pathname === "/admin" || url.pathname === "/admin.html";
+    if (isAdmin && env.RACE_KV && !(await gateOk(request, env))) {
+      return new Response(GATE_PAGE, { status: 200, headers: { "content-type": "text/html; charset=utf-8", "cache-control": "no-store", "x-frame-options": "DENY", "referrer-policy": "no-referrer" } });
+    }
     const res = await env.ASSETS.fetch(request);
-    if (url.pathname === "/admin" || url.pathname === "/admin.html") {
+    if (isAdmin) {
       const h = new Headers(res.headers);
       h.set("x-frame-options", "DENY");
       h.set("referrer-policy", "no-referrer");
