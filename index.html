@@ -69,7 +69,7 @@ header .glow{position:absolute;right:-40px;top:-40px;width:200px;height:200px;bo
 .mode.active .count{background:rgba(28,22,14,.15)}
 
 /* stats */
-.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
+.stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px}
 .stat{padding:16px;display:flex;align-items:center;justify-content:space-between;gap:12px;border-radius:14px}
 .stat .k{font-size:11px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.08em}
 .stat .v{font-family:var(--display);font-weight:800;font-size:18px;margin:3px 0 1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -141,7 +141,7 @@ tbody tr:hover .nm{color:var(--gold)}
 .chips{display:flex;flex-wrap:wrap;gap:8px}
 .chip{display:inline-flex;align-items:center;gap:8px;padding:6px 12px;border-radius:9px;background:rgba(46,39,29,.7);border:1px solid rgba(88,72,50,.7);font-size:12px}
 .dotc{width:8px;height:8px;border-radius:50%}
-.champs{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.champs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
 .champ{display:flex;align-items:center;gap:10px;border-radius:10px;padding:8px 12px;border:1px solid rgba(88,72,50,.6);background:rgba(34,29,23,.6);min-width:0}
 .champ.first{border-color:rgba(226,186,112,.5);background:rgba(226,186,112,.1)}
 .champ .md{width:24px;text-align:center;font-size:16px}
@@ -167,9 +167,11 @@ footer img{width:20px;height:20px}
 .xbtn:hover{filter:brightness(1.06)}
 @media (min-width:1500px){ .wrap{max-width:1400px} }
 @media (max-width:1100px){ .stats{gap:12px} .stat .v{font-size:16px} }
+@media (max-width:1000px){ .stats{grid-template-columns:repeat(2,minmax(0,1fr))} }
+html,body{overflow-x:clip}
 @media (max-width:900px){
-  .stats{grid-template-columns:repeat(2,1fr)}
-  .champs{grid-template-columns:repeat(2,1fr)}
+  .stats{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .champs{grid-template-columns:repeat(2,minmax(0,1fr))}
   header.panel{justify-content:center;text-align:center}
   .brand{justify-content:center}
   .tabs{width:100%;justify-content:center}
@@ -181,9 +183,9 @@ footer img{width:20px;height:20px}
   .brand img{width:46px;height:46px}
   .brand h1{font-size:21px}
   .brand p{font-size:12px}
-  .tabs{display:grid;grid-template-columns:repeat(3,1fr)}
+  .tabs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr))}
   .tab{padding:8px 6px;font-size:12px;justify-content:center}
-  .modes .panel{width:100%;display:grid;grid-template-columns:repeat(3,1fr)}
+  .modes .panel{width:100%;display:grid;grid-template-columns:repeat(3,minmax(0,1fr))}
   .mode{padding:9px 4px;font-size:11px;letter-spacing:.06em;justify-content:center;gap:5px}
   .mode .ico{display:none}
   .main{padding:14px 12px;gap:14px}
@@ -194,7 +196,7 @@ footer img{width:20px;height:20px}
   .stat .badge{width:32px;height:32px}.stat .badge .ico{width:16px;height:16px}
   .pcol{width:30%;max-width:110px}
   .podium{gap:8px}
-  .champs{grid-template-columns:1fr}
+  .champs{grid-template-columns:minmax(0,1fr)}
   .filters{flex-direction:column;align-items:stretch}
   .search{max-width:none;min-width:0}
   .ctrl{flex-wrap:wrap}
@@ -221,7 +223,7 @@ footer img{width:20px;height:20px}
   .toast{left:10px;right:10px}
 }
 @media (max-width:380px){
-  .stats{grid-template-columns:1fr}
+  .stats{grid-template-columns:minmax(0,1fr)}
   .brand h1{font-size:18px}
   .rank{width:24px;height:24px;font-size:11px}
 }
