@@ -3,10 +3,10 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>VIGIB Race · Buku Juara & Klasemen Live</title>
-<meta name="description" content="Klasemen dan riwayat race VIGIB OBSTACLE — Race Liga, Normal, dan Team, langsung dari Buku Juara di dalam game.">
+<title>VIGIB Race · Klasemen Live</title>
+<meta name="description" content="Klasemen dan riwayat race VIGIB OBSTACLE — Race Liga, Normal, dan Team, langsung dari dalam game.">
 <meta name="theme-color" content="#100d0a">
-<meta property="og:title" content="VIGIB Race · Buku Juara & Klasemen Live">
+<meta property="og:title" content="VIGIB Race · Klasemen Live">
 <meta property="og:description" content="Klasemen Liga, Race Normal & Team dari VIGIB OBSTACLE.">
 <meta property="og:image" content="logo-vg.png">
 <link rel="icon" type="image/png" href="logo-vg.png">
@@ -353,7 +353,7 @@ function render() {
     <div class="brand"><img src="logo-vg.png" alt="Logo VG">
       <div><div class="title-row"><h1><span class="gold-text">VIGIB</span> RACE</h1>
         <span class="live ${live ? "on" : "off"}"><span class="dot"></span>${live ? "Live" : (S.error ? "Offline" : "Memuat")}</span></div>
-        <p>Buku Juara &amp; Klasemen langsung dari <b class="gold">VIGIB OBSTACLE</b></p></div>
+        <p>Klasemen langsung dari <b class="gold">VIGIB OBSTACLE</b></p></div>
     </div>
     <nav class="tabs">
       <button class="tab ${S.tab === "standings" ? "active" : ""}" data-tab="standings">${ico("trophy")}Klasemen</button>
@@ -369,7 +369,7 @@ function render() {
     ${stat(S.mode === "team" ? "Tim Teratas" : "Pemimpin Klasemen", leader ? (leader.username || leader.name) : "-", leader ? valueOf(leader) : "belum ada data", "crown")}
     ${stat("Sesi " + mi.long, sessions.length, totalAll + " sesi semua mode", "bookmark", "hi")}
     ${stat("Pembalap Terdata", uniq.size, "peserta mode ini", "users", "sage")}
-    ${stat("Update Terakhir", timeAgo(md.updatedAt), md.sentBy ? "dikirim " + md.sentBy.displayName : "dari Buku Juara", "refresh", "muted")}
+    ${stat("Update Terakhir", timeAgo(md.updatedAt), md.sentBy ? "dikirim " + md.sentBy.displayName : "dari game", "refresh", "muted")}
   </div>
   ${S.error ? `<div class="panel err">${ico("alert")} Gagal memuat data: ${esc(S.error)}</div>` : ""}`;
 
@@ -378,7 +378,7 @@ function render() {
       ? `<tr><th style="width:64px">Rank</th><th class="l">Tim</th><th>Sesi</th><th>Menang Sesi 🏆</th><th>Anggota</th><th class="r">Total Poin</th></tr>`
       : `<tr><th style="width:64px">Rank</th><th class="l">Pembalap</th><th>Sesi Diikuti</th><th>Juara 1 🏆</th><th>Podium 🥇🥈🥉</th><th class="r">${S.mode === "liga" ? "Poin Liga" : "Total Finish"}</th></tr>`;
     const body = !rows.length
-      ? `<tr><td colspan="6">${empty(S.data ? `Belum ada data ${mi.long}. Tekan tombol KIRIM KE WEB di Buku Juara dalam game.` : "Memuat data...")}</td></tr>`
+      ? `<tr><td colspan="6">${empty(S.data ? `Belum ada data ${mi.long}. Kirim dari dalam game dengan tombol Kirim W.` : "Memuat data...")}</td></tr>`
       : rows.map((r) => S.mode === "team"
         ? `<tr><td>${rankBadge(r.rank)}</td><td class="l"><div class="who-cell"><span class="tbar" style="background:${esc(r.colorHex)}"></span><span class="nm">${esc(r.name)}</span></div></td>
             <td class="muted">${r.sessions}</td><td><b class="gold">${r.wins}</b></td><td class="muted">${r.members}</td>
@@ -403,7 +403,7 @@ function render() {
       <div class="tbl-wrap"><table><thead>${head}</thead><tbody>${body}</tbody></table></div>
     </main>`;
   } else {
-    const cards = !sessions.length ? empty(S.data ? `Belum ada sesi ${mi.long}. Kirim dari Buku Juara di dalam game.` : "Memuat data...")
+    const cards = !sessions.length ? empty(S.data ? `Belum ada sesi ${mi.long}. Kirim dari dalam game dengan tombol Kirim W.` : "Memuat data...")
       : sessions.map((s) => {
         const champs = [...(s.champions || [])].sort((a, b) => a.rank - b.rank);
         const pts = {}; (s.ligaPoints || []).forEach((l) => { pts[l.userId] = l.points; });
@@ -423,7 +423,7 @@ function render() {
       }).join("");
     html += `
     <main class="panel main">
-      <div class="main-head" style="border-bottom:1px solid rgba(88,72,50,.7);padding-bottom:12px"><h2>${ico("book")}Buku Juara · ${mi.long}</h2><span class="muted" style="font-size:12px">${sessions.length} sesi tercatat</span></div>
+      <div class="main-head" style="border-bottom:1px solid rgba(88,72,50,.7);padding-bottom:12px"><h2>${ico("book")}Riwayat Sesi · ${mi.long}</h2><span class="muted" style="font-size:12px">${sessions.length} sesi tercatat</span></div>
       <div style="display:flex;flex-direction:column;gap:12px">${cards}</div>
     </main>`;
   }
@@ -506,7 +506,7 @@ async function load() {
     });
     S.data = j; S.error = null; S.lastFetch = Date.now();
     const total = Object.values(j.modes || {}).reduce((n, m) => n + ((m.sessions && m.sessions.length) || 0), 0);
-    if (S.known !== null && total > S.known) { confetti(); toast(`🏆 ${total - S.known} sesi baru masuk dari Buku Juara!`); }
+    if (S.known !== null && total > S.known) { confetti(); toast(`🏆 ${total - S.known} sesi baru masuk!`); }
     S.known = total;
     // buka mode yang punya data kalau mode aktif masih kosong (kunjungan pertama)
     if (!load.done) {

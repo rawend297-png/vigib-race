@@ -202,7 +202,7 @@ function render() {
     .concat(isSuper ? [["akun", "Akun Admin", "users"]] : []).concat([["log", "Log", "list"]]);
   app.innerHTML = `
   <header class="panel">
-    <div class="brand"><img src="logo-vg.png" alt="VG"><div><h1 class="gold-text">PANEL ADMIN</h1><p>VIGIB Race · Buku Juara</p></div></div>
+    <div class="brand"><img src="logo-vg.png" alt="VG"><div><h1 class="gold-text">PANEL ADMIN</h1><p>VIGIB Race</p></div></div>
     <div class="who">
       <span class="role ${S.user.role}">${S.user.role === "super" ? "Super Admin" : "Admin"}</span>
       <b>${esc(S.user.username)}</b>
@@ -220,7 +220,7 @@ function render() {
 function loginView() {
   return `<div class="panel login">
     <img src="logo-vg.png" alt="VG">
-    <div><h1 class="gold-text">PANEL ADMIN</h1><div class="muted" style="margin-top:4px">VIGIB Race · Buku Juara</div></div>
+    <div><h1 class="gold-text">PANEL ADMIN</h1><div class="muted" style="margin-top:4px">VIGIB Race</div></div>
     ${S.loginErr ? `<div class="msg err">${esc(S.loginErr)}</div>` : ""}
     <form id="loginForm" autocomplete="on">
       <div><label class="lb" for="u">Username</label><input class="in" id="u" name="username" autocomplete="username" required maxlength="20"></div>
@@ -312,9 +312,9 @@ function klasemenBody() {
         : `<button class="btn sm gold" data-act="lbsave">Simpan</button>${edited ? `<button class="btn sm ghost" data-act="lbrevert">${ico("undo")}</button>` : ""}<button class="btn sm danger" data-act="lbdel">${ico("trash")}</button>`}</div></td>
     </tr>`).join("");
   return `<div class="bar"><h2>Klasemen Liga</h2><button class="btn sm" data-act="reload">${ico("refresh")} Muat ulang</button></div>
-    <p class="muted" style="margin:-6px 0 14px;font-size:12.5px">Klasemen akumulatif yang dikirim dari Buku Juara. Ubah nama atau poin lalu tekan Simpan.</p>
+    <p class="muted" style="margin:-6px 0 14px;font-size:12.5px">Klasemen akumulatif yang dikirim dari game. Ubah nama atau poin lalu tekan Simpan.</p>
     ${rows.length ? `<div class="tw"><table><thead><tr><th>#</th><th>Pembalap</th><th>Total Poin</th><th>Sesi</th><th></th></tr></thead><tbody>${body}</tbody></table></div>`
-      : `<div class="empty">Belum ada klasemen liga. Kirim dari Buku Juara mode Liga di dalam game.</div>`}`;
+      : `<div class="empty">Belum ada klasemen liga. Kirim dari mode Liga di dalam game.</div>`}`;
 }
 
 function akunBody() {
