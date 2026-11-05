@@ -13,8 +13,6 @@
 //   admin  -> edit / hapus data sesi & klasemen
 
 const MODES = ["liga", "normal", "team"];
-// Akun super admin dibuat SEKALI lewat halaman setup (admin.html) oleh pemiliknya sendiri.
-// Tidak ada password atau hash password di kode ini (repo publik).
 const SUPER_USERNAME = "Hanrietsuki";
 const DUMMY_SALT = "AAAAAAAAAAAAAAAAAAAAAA==";
 const PBKDF2_ITER = 10000;
@@ -129,7 +127,7 @@ async function getGate(env) {
 }
 async function gateOk(request, env) {
   const gate = await getGate(env);
-  if (!gate) return true; // belum ada kode akses -> panel terbuka (hanya login)
+  if (!gate) return true;
   const token = getCookie(request, GATE_COOKIE);
   if (!token || !/^[0-9a-f]{64}$/.test(token)) return false;
   const g = await kvJson(env, "gatetok:" + token);
@@ -200,7 +198,7 @@ async function currentUser(request, env) {
   const sess = await kvJson(env, "sess:" + token);
   if (!sess) return null;
   const acct = await kvJson(env, userKey(sess.username));
-  if (!acct || acct.ver !== sess.ver) return null; // akun dihapus / password direset
+  if (!acct || acct.ver !== sess.ver) return null;
   return { token, username: acct.username, role: acct.role, seeded: !!acct.seeded };
 }
 
@@ -215,7 +213,7 @@ async function handleLogin(request, env) {
   const acct = validUsername(username) ? await getAccount(env, username) : null;
   let ok = false;
   if (acct) ok = safeEqual(await pbkdf2(password, acct.salt, acct.iter || PBKDF2_ITER), acct.hash);
-  else await pbkdf2(password || "x", DUMMY_SALT, PBKDF2_ITER); // samakan waktu respon
+  else await pbkdf2(password || "x", DUMMY_SALT, PBKDF2_ITER);
   if (!ok) {
     await env.RACE_KV.put(rlKey, String(fails + 1), { expirationTtl: 900 });
     return err("Username atau password salah", 401);
@@ -257,7 +255,6 @@ function applyOverlay(d, ov) {
     const del = new Set((ov.deleted[m] || []).map(Number));
     const ed = ov.edits[m] || {};
     const ada = new Set(md.sessions.map((s) => Number(s.sessionNumber)));
-    // sesi yang DITAMBAHKAN admin (nomor belum ada di data game) ikut ditampilkan
     const tambahan = Object.keys(ed).map(Number).filter((n) => !ada.has(n)).map((n) => ({ ...ed[n], addedByAdmin: true }));
     md.sessions = md.sessions
       .map((s) => (ed[s.sessionNumber] ? ed[s.sessionNumber] : s))
@@ -269,7 +266,6 @@ function applyOverlay(d, ov) {
   const lbDel = new Set((ov.lbDeleted.liga || []).map(String));
   const lbEd = ov.lbEdits.liga || {};
   const lbAda = new Set(lb.map((e) => String(e.userId)));
-  // pembalap yang DITAMBAHKAN admin ke klasemen liga
   const lbTambahan = Object.keys(lbEd).filter((uid) => !lbAda.has(uid))
     .map((uid) => ({ userId: Number(uid), displayName: "", totalPoints: 0, ...lbEd[uid], addedByAdmin: true }));
   const lbBaru = lb.map((e) => (lbEd[e.userId] ? { ...e, ...lbEd[e.userId] } : e))
@@ -282,7 +278,7 @@ function applyOverlay(d, ov) {
 function cleanSession(s, mode, n) {
   const out = {
     sessionNumber: n,
-    timestamp: int(s.timestamp),
+    timestamp: int(s.timestamp) || Date.now(), // Fallback ke waktu sekarang jika timestamp kosong
     mode,
     champions: (Array.isArray(s.champions) ? s.champions : []).slice(0, 60).map((c) => ({
       userId: int(c.userId), displayName: str(c.displayName), rank: int(c.rank),
@@ -317,10 +313,27 @@ async function adminAction(path, request, env, user) {
   switch (path) {
     case "/api/admin/session/save": {
       if (!mode) throw new HttpError("Mode tidak dikenal");
-      const n = int(body.session && body.session.sessionNumber);
-      if (n <= 0) throw new HttpError("Nomor sesi tidak valid");
-      ov.edits[mode][n] = cleanSession(body.session, mode, n);
-      detail = `edit sesi ${mode} #${n}`;
+
+      // Ambil data gabungan saat ini untuk mendeteksi nomor sesi tertinggi
+      const currentData = normalizeData(await staticData(request, env));
+      applyOverlay(currentData, ov);
+      const existingSessions = currentData.modes[mode].sessions || [];
+
+      let n = int(body.session && body.session.sessionNumber);
+      
+      // Jika penambahan sesi baru (isNew) atau sessionNumber <= 0, hitung max + 1
+      if (body.isNew || n <= 0) {
+        const maxN = existingSessions.reduce((max, s) => Math.max(max, int(s.sessionNumber)), 0);
+        n = maxN + 1;
+      }
+
+      const sessionToSave = body.session || {};
+      if (!sessionToSave.timestamp) {
+        sessionToSave.timestamp = Date.now();
+      }
+
+      ov.edits[mode][n] = cleanSession(sessionToSave, mode, n);
+      detail = `simpan sesi ${mode} #${n}`;
       break;
     }
     case "/api/admin/session/revert": {
@@ -390,7 +403,6 @@ async function superAction(path, request, env, user) {
     const h = await makeHash(body.code);
     await kvPut(env, "gate:config", { ...h, ver: ((old && old.ver) || 0) + 1, updatedAt: Date.now(), updatedBy: user.username });
     await addLog(env, user.username, "akun", old ? "ganti kode akses panel" : "pasang kode akses panel");
-    // perangkat super admin ini langsung diberi akses baru supaya tidak terkunci sendiri
     const g = await getGate(env);
     const token = randHex(32);
     await kvPut(env, "gatetok:" + token, { ver: g.ver, at: Date.now() }, { expirationTtl: GATE_TTL });
@@ -452,7 +464,6 @@ async function changeOwnPassword(request, env, user) {
   const h = await makeHash(body.newPassword);
   Object.assign(acct, h, { ver: (acct.ver || 1) + 1, updatedAt: Date.now(), seeded: false });
   await kvPut(env, userKey(acct.username), acct);
-  // buat sesi baru supaya tetap login
   const token = randHex(32);
   await kvPut(env, "sess:" + token, { username: acct.username, ver: acct.ver, at: Date.now() }, { expirationTtl: SESSION_TTL });
   await env.RACE_KV.delete("sess:" + user.token);
@@ -473,7 +484,6 @@ async function handleApi(request, env, url) {
   }
   if (!env.RACE_KV) return err("KV RACE_KV belum dipasang di Cloudflare Pages", 503);
 
-  // semua permintaan yang mengubah data wajib JSON + header khusus (perlindungan CSRF)
   if (m !== "GET") {
     if (!(request.headers.get("content-type") || "").includes("application/json") || request.headers.get("x-vigib") !== "1") {
       return err("Permintaan ditolak", 403);
@@ -481,7 +491,6 @@ async function handleApi(request, env, url) {
   }
 
   if (p === "/api/gate" && m === "POST") return handleGate(request, env);
-  // semua API panel (setup, login, admin, super) wajib lolos kode akses kalau kode sudah dipasang
   if (!(await gateOk(request, env))) return err("Kode akses panel diperlukan", 403);
 
   if (p === "/api/setup" && m === "GET") return json({ ok: true, needed: await setupNeeded(env), username: SUPER_USERNAME });
