@@ -339,11 +339,13 @@ const XLSX = (() => {
   return { build, download };
 })();
 
-// (2026-11-05) Excel = tampilan website. Untuk setiap mode:
+// (2026-11-05) Excel = tampilan website. opt = { mode, view: "standings" | "history", rows }:
+//   hanya tabel yang sedang dibuka yang diambil (mode + tab). rows = baris tabel Klasemen persis seperti
+//   di layar (sudah tersaring pencarian & terurut). Tanpa opt -> semua mode, kedua tab. Untuk setiap mode:
 //   "Klasemen <MODE>" -> tabel tab Klasemen (kolom & urutan peringkat sama, urutan default)
 //   "Riwayat <MODE>"  -> kartu tab Riwayat Sesi (badge #N, judul sesi, tanggal, jumlah peserta/juara,
 //                        tim, lalu juara per baris), urutan terbaru dulu seperti di website
-function vigibSheets(data) {
+function vigibSheets(data, opt = {}) {
   const MODES_X = [["liga", "LIGA"], ["normal", "NORMAL"], ["team", "TEAM"]];
   const toDate = (t) => { const n = Number(t); return n > 0 ? new Date(n < 1e11 ? n * 1000 : n) : ""; };
   const badgeOf = (s) => s.badge || s.sessionNumber;
@@ -396,24 +398,28 @@ function vigibSheets(data) {
 
   const klasemen = [], riwayat = [];
   for (const [m, label] of MODES_X) {
+    if (opt.mode && m !== opt.mode) continue;
     const md = (data.modes && data.modes[m]) || { sessions: [] };
     const ss = sessionsOf(md);
+    const shown = (list) => (Array.isArray(opt.rows) && opt.mode === m ? opt.rows : list);
 
     // ---- tab Klasemen ----
-    if (m === "team") {
-      const list = teams(md);
+    if (opt.view === "history") {
+      // tab Klasemen tidak sedang dibuka
+    } else if (m === "team") {
+      const list = shown(teams(md));
       if (list.length) klasemen.push({ name: `Klasemen ${label}`,
         cols: [{ h: "Rank", w: 7 }, { h: "Tim", w: 24 }, { h: "Sesi", w: 8 }, { h: "Menang 🏆", w: 11 }, { h: "Anggota", w: 10 }, { h: "Total Poin", w: 12 }],
-        rows: list.map((r, i) => [i + 1, r.name, r.sessions, r.wins, r.members, r.points]) });
+        rows: list.map((r, i) => [r.rank || i + 1, r.name, r.sessions, r.wins, r.members, r.points]) });
     } else {
-      const list = players(m, md);
+      const list = shown(players(m, md));
       if (list.length) klasemen.push({ name: `Klasemen ${label}`,
         cols: [{ h: "Rank", w: 7 }, { h: "Pembalap", w: 26 }, { h: "UserId", w: 14 }, { h: "Sesi Diikuti", w: 12 }, { h: "Juara 1 🏆", w: 11 }, { h: "Podium 🥇🥈🥉", w: 14 }, { h: m === "liga" ? "Poin Liga" : "Total Finish", w: 12 }],
-        rows: list.map((r, i) => [i + 1, r.username, Number(r.userId) || r.userId, r.sessions, r.wins, r.podiums, m === "liga" ? r.points : r.finishes]) });
+        rows: list.map((r, i) => [r.rank || i + 1, r.username, Number(r.userId) || r.userId, r.sessions, r.wins, r.podiums, m === "liga" ? r.points : r.finishes]) });
     }
 
     // ---- tab Riwayat Sesi ----
-    if (!ss.length) continue;
+    if (opt.view === "standings" || !ss.length) continue;
     const cols = [{ h: "Sesi", w: 7 }, { h: "Nama Sesi", w: 18 }, { h: "Tanggal", w: 19 }, { h: "Peserta", w: 9 }, { h: "Juara", w: 8 }];
     if (m === "team") cols.push({ h: "Tim", w: 40 });
     cols.push({ h: "Posisi", w: 8 }, { h: "Pembalap", w: 26 }, { h: "UserId", w: 14 });
@@ -434,12 +440,12 @@ function vigibSheets(data) {
     riwayat.push({ name: `Riwayat ${label}`, cols, rows });
   }
   const sheets = [...klasemen, ...riwayat];
-  if (!sheets.length) sheets.push({ name: "VIGIB Race", cols: [{ h: "Info", w: 40 }], rows: [["Belum ada data race"]] });
+  if (!sheets.length) sheets.push({ name: "VIGIB Race", cols: [{ h: "Info", w: 40 }], rows: [["Belum ada data untuk tabel ini"]] });
   return sheets;
 }
-function vigibExcelName() {
+function vigibExcelName(part) {
   const t = new Date(), p = (n) => String(n).padStart(2, "0");
-  return `VIGIB_Race_${t.getFullYear()}-${p(t.getMonth() + 1)}-${p(t.getDate())}_${p(t.getHours())}${p(t.getMinutes())}.xlsx`;
+  return `VIGIB_Race_${part ? part + "_" : ""}${t.getFullYear()}-${p(t.getMonth() + 1)}-${p(t.getDate())}_${p(t.getHours())}${p(t.getMinutes())}.xlsx`;
 }
 
 const S = { data: null, error: null, lastFetch: 0, avatars: {}, tab: "standings", mode: "liga", q: "", sortBy: "default", order: "desc", known: null };
@@ -598,7 +604,7 @@ function render() {
           <select id="sort">${SORTS.map(([v, l]) => `<option value="${v}" ${S.sortBy === v ? "selected" : ""}>${l}</option>`).join("")}</select>
           <button class="ibtn" id="order" title="Ubah urutan">${ico(S.order === "asc" ? "up" : "down")}</button>
           <button class="ibtn" id="reload" title="Muat ulang">${ico("refresh")}</button>
-          <button class="xbtn gold-btn" id="excel" title="Unduh semua data race sebagai file Excel">${ico("xls")}Download Excel</button>
+          <button class="xbtn gold-btn" id="excel" title="Unduh tabel yang sedang dibuka sebagai file Excel">${ico("xls")}Download Excel</button>
         </div>
       </div>
       <div class="tbl-wrap"><table><thead>${head}</thead><tbody>${body}</tbody></table></div>
@@ -646,7 +652,11 @@ document.getElementById("app").addEventListener("click", (e) => {
   if (!t) return;
   if (t.id === "excel") {
     if (!S.data) { toast("Data belum dimuat"); return; }
-    try { XLSX.download(vigibExcelName(), vigibSheets(S.data)); toast("File Excel diunduh"); } catch (er) { toast("Gagal membuat Excel: " + (er.message || er)); }
+    // hanya tabel yang sedang dibuka: tab (Klasemen / Riwayat Sesi) + mode, termasuk pencarian & urutan
+    const view = S.tab === "history" ? "history" : "standings";
+    const opt = { mode: S.mode, view, rows: view === "standings" ? computeRows().rows : undefined };
+    const part = (view === "history" ? "Riwayat_" : "Klasemen_") + S.mode.toUpperCase() + (view === "standings" && S.q ? "_cari" : "");
+    try { XLSX.download(vigibExcelName(part), vigibSheets(S.data, opt)); toast("File Excel diunduh"); } catch (er) { toast("Gagal membuat Excel: " + (er.message || er)); }
     return;
   }
   if (t.dataset.tab) S.tab = t.dataset.tab;
