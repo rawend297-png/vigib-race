@@ -270,22 +270,22 @@ function vigibSheets(data) {
       rows: [...lb].sort((a, b) => (Number(b.totalPoints) || 0) - (Number(a.totalPoints) || 0)).map((e, i) => [i + 1, e.displayName || "", Number(e.userId) || "", Number(e.totalPoints) || 0, e.sessionCount != null ? Number(e.sessionCount) : ""]) });
   }
   for (const m of ["liga", "normal", "team"]) {
-    const ss = [...((data.modes && data.modes[m] && data.modes[m].sessions) || [])].sort((a, b) => a.sessionNumber - b.sessionNumber);
+    const ss = [...((data.modes && data.modes[m] && data.modes[m].sessions) || [])].sort((a, b) => (a.badge || a.sessionNumber) - (b.badge || b.sessionNumber));
     if (!ss.length) continue;
     const rows = [];
     for (const s of ss) {
       const lp = {}; (s.ligaPoints || []).forEach((l) => { lp[l.userId] = l.points; });
       const ch = [...(s.champions || [])].sort((a, b) => a.rank - b.rank);
-      if (!ch.length) rows.push([s.sessionNumber, d(s.timestamp), "", "(tidak ada yang finish)", "", "", (s.participants || []).length]);
-      ch.forEach((c) => rows.push([s.sessionNumber, d(s.timestamp), Number(c.rank) || "", c.displayName || "", Number(c.userId) || "", m === "liga" ? (lp[c.userId] ?? c.points ?? "") : (c.points ?? ""), (s.participants || []).length]));
+      if (!ch.length) rows.push([s.badge || s.sessionNumber, d(s.timestamp), "", "(tidak ada yang finish)", "", "", (s.participants || []).length]);
+      ch.forEach((c) => rows.push([s.badge || s.sessionNumber, d(s.timestamp), Number(c.rank) || "", c.displayName || "", Number(c.userId) || "", m === "liga" ? (lp[c.userId] ?? c.points ?? "") : (c.points ?? ""), (s.participants || []).length]));
     }
     sheets.push({ name: `Juara ${L[m]}`, cols: [{ h: "Sesi", w: 7 }, { h: "Tanggal", w: 19 }, { h: "Posisi", w: 8 }, { h: "Nama", w: 26 }, { h: "UserId", w: 14 }, { h: m === "liga" ? "Poin Liga" : "Poin", w: 10 }, { h: "Jumlah Peserta", w: 15 }], rows });
     const pr = [];
-    ss.forEach((s) => (s.participants || []).forEach((p) => pr.push([s.sessionNumber, d(s.timestamp), p.displayName || "", Number(p.userId) || "", p.team ? p.team.name || "" : ""])));
+    ss.forEach((s) => (s.participants || []).forEach((p) => pr.push([s.badge || s.sessionNumber, d(s.timestamp), p.displayName || "", Number(p.userId) || "", p.team ? p.team.name || "" : ""])));
     if (pr.length) sheets.push({ name: `Peserta ${L[m]}`, cols: [{ h: "Sesi", w: 7 }, { h: "Tanggal", w: 19 }, { h: "Nama", w: 26 }, { h: "UserId", w: 14 }, { h: "Tim", w: 16 }], rows: pr });
     if (m === "team") {
       const tr = [];
-      ss.forEach((s) => [...(s.teamData || [])].sort((a, b) => (b.points || 0) - (a.points || 0)).forEach((t, i) => tr.push([s.sessionNumber, d(s.timestamp), i + 1, t.name || "", Number(t.points) || 0, Number(t.memberCount) || 0])));
+      ss.forEach((s) => [...(s.teamData || [])].sort((a, b) => (b.points || 0) - (a.points || 0)).forEach((t, i) => tr.push([s.badge || s.sessionNumber, d(s.timestamp), i + 1, t.name || "", Number(t.points) || 0, Number(t.memberCount) || 0])));
       if (tr.length) sheets.push({ name: "Tim per Sesi", cols: [{ h: "Sesi", w: 7 }, { h: "Tanggal", w: 19 }, { h: "Peringkat", w: 10 }, { h: "Tim", w: 20 }, { h: "Poin", w: 9 }, { h: "Anggota", w: 9 }], rows: tr });
     }
   }
@@ -318,9 +318,15 @@ function sessionsView(mode) {
   const ed = S.ov.edits[mode] || {};
   const ada = new Set(raw.map((s) => Number(s.sessionNumber)));
   const tambahan = Object.keys(ed).map(Number).filter((n) => !ada.has(n)).map((n) => ({ raw: null, cur: ed[n], edited: false, added: true, deleted: del.has(n) }));
-  return [...raw].map((s) => ({
+  const list = [...raw].map((s) => ({
     raw: s, cur: ed[s.sessionNumber] || s, edited: !!ed[s.sessionNumber], deleted: del.has(Number(s.sessionNumber)),
-  })).concat(tambahan).sort((a, b) => b.cur.sessionNumber - a.cur.sessionNumber);
+  })).concat(tambahan);
+  // badge #N = urutan sesi yang tampil (1 = paling lama), sama seperti di website
+  const key = (x) => { const t = Math.floor(Number(x.cur.timestamp)) || 0; return t > 0 && t < 1e11 ? t * 1000 : t; };
+  const asc = list.slice().sort((a, b) => (key(a) - key(b)) || (a.cur.sessionNumber - b.cur.sessionNumber));
+  let i = 0;
+  for (const x of asc) x.badge = x.deleted ? null : ++i;
+  return asc.reverse();
 }
 function leaderboardView() {
   const lb = (S.raw && S.raw.modes.liga && S.raw.modes.liga.ligaLeaderboard) || [];
@@ -428,12 +434,12 @@ function sesiBody() {
   const banner = konflik.length
     ? `<div class="warnbox"><b>Bentrok nomor sesi (${konflik.length})</b><br>Sesi buatan admin di bawah memakai nomor yang kini juga dipakai sesi asli dari game. Website menampilkan sesi dari game, bukan versi admin. Salin data yang masih dibutuhkan lewat <b>Tambah Sesi</b>, lalu klik <b>Batalkan Edit</b> pada sesi bentrok.<ul>${konflik.map((c) => `<li>${esc(MODES[c.mode] || c.mode)} · Sesi #${Number(c.sessionNumber)}</li>`).join("")}</ul></div>`
     : "";
-  const items = list.map(({ cur, edited, deleted, added }) => {
+  const items = list.map(({ cur, edited, deleted, added, badge }) => {
     const champs = (cur.champions || []).slice().sort((a, b) => a.rank - b.rank).slice(0, 3).map((c) => `${c.rank}. ${esc(c.displayName)}`).join(" · ");
     const nameLabel = cur.name || cur.title || `Sesi ${cur.bookNumber || cur.sessionNumber}`; // judul = nomor dari game, "Nomor #N" di bawahnya = nomor di website
     return `<div class="item ${deleted ? "deleted" : ""}">
       <div><div class="t">${esc(nameLabel)} ${added ? `<span class="tag ed">Ditambah admin</span>` : ""} ${bentrok.has(Number(cur.sessionNumber)) ? `<span class="tag warn">Bentrok</span>` : ""} ${edited ? `<span class="tag ed">Diedit</span>` : ""} ${deleted ? `<span class="tag del">Dihapus</span>` : ""}</div>
-        <div class="s">Nomor #${cur.sessionNumber} · ${fmtDate(cur.timestamp)} · ${(cur.participants || []).length} peserta${champs ? " · " + champs : ""}</div></div>
+        <div class="s">${badge ? `Badge #${badge} · ` : ""}Nomor #${cur.sessionNumber} · ${fmtDate(cur.timestamp)} · ${(cur.participants || []).length} peserta${champs ? " · " + champs : ""}</div></div>
       <div class="acts">
         ${deleted ? `<button class="btn sm" data-act="restore" data-n="${cur.sessionNumber}">${ico("undo")} Pulihkan</button>`
           : `<button class="btn sm" data-act="edit" data-n="${cur.sessionNumber}">${ico("edit")} Edit</button>
@@ -442,7 +448,7 @@ function sesiBody() {
       </div></div>`;
   }).join("");
   return `<div class="bar"><h2>Data Sesi</h2><div style="display:flex;gap:8px;flex-wrap:wrap">${segModes()}<button class="btn sm gold" data-act="newsess">${ico("plus")} Tambah Sesi</button><button class="btn sm" data-act="reload">${ico("refresh")} Muat ulang</button><button class="btn sm danger" data-act="delall">${ico("trash")} Hapus Semua</button></div></div>
-    <p class="muted" style="margin:-6px 0 14px;font-size:12.5px">Perubahan tampil di website saat itu juga. Edit bisa dibatalkan, tapi <b>hapus bersifat permanen</b>: sesi yang dihapus tidak akan muncul lagi walau Book dikirim ulang dari game.</p>
+    <p class="muted" style="margin:-6px 0 14px;font-size:12.5px">Perubahan tampil di website saat itu juga. Edit bisa dibatalkan. Sesi yang dihapus langsung hilang dari website dan data, tapi <b>muncul lagi kalau Book dikirim ulang dari game</b>. Badge #N dihitung ulang otomatis sesuai jumlah sesi.</p>
     ${banner}
     <div class="list">${items || `<div class="empty">Belum ada sesi ${MODES[S.mode]}.</div>`}</div>`;
 }
@@ -712,7 +718,7 @@ function purgePost(path, body, msg) {
 function deleteAllForm() {
   const count = (m) => sessionsView(m).filter((x) => !x.deleted).length;
   openModal(`<h3>Hapus Semua Sesi</h3>
-    <p class="muted" style="margin:0">Semua sesi yang dipilih dihapus <b>permanen</b> dari website dan tidak akan muncul lagi walau Book dikirim ulang dari game. Sesi baru yang selesai setelah ini tetap masuk seperti biasa.</p>
+    <p class="muted" style="margin:0">Semua sesi yang dipilih dihapus dari website dan data. Sesi akan muncul lagi kalau Book dikirim ulang dari game.</p>
     <div class="col" style="display:flex;flex-direction:column;gap:8px;margin:12px 0">
       <label style="display:flex;gap:8px;align-items:center;cursor:pointer"><input type="radio" name="scope" value="mode" checked> Hanya mode ${esc(MODES[S.mode])} (${count(S.mode)} sesi${S.mode === "liga" ? " + klasemen liga" : ""})</label>
       <label style="display:flex;gap:8px;align-items:center;cursor:pointer"><input type="radio" name="scope" value="all"> Semua mode (${Object.keys(MODES).map((m) => `${MODES[m]} ${count(m)}`).join(" · ")} sesi + klasemen liga)</label>
@@ -727,7 +733,7 @@ function deleteAllForm() {
         const all = m.querySelector('input[name="scope"]:checked').value === "all";
         closeModal();
         purgePost("/api/admin/session/deleteAll", all ? { all: true } : { mode: S.mode },
-          all ? "Semua sesi di semua mode dihapus permanen" : `Semua sesi ${MODES[S.mode]} dihapus permanen`);
+          all ? "Semua sesi di semua mode dihapus" : `Semua sesi ${MODES[S.mode]} dihapus`);
       });
       setTimeout(() => inp.focus(), 30);
     }, "sm");
@@ -757,8 +763,8 @@ async function onAct(b) {
     case "newlb": lbAddForm(); break;
     case "excel": run(downloadExcel, "File Excel diunduh"); break;
     case "del":
-      if (await confirmBox(`Hapus permanen sesi #${n}?`, "Sesi ini dihapus dari website untuk selamanya dan tidak akan muncul lagi walau Book dikirim ulang dari game. Tidak bisa dibatalkan.", "Hapus Permanen", true))
-        purgePost("/api/admin/session/delete", { mode: S.mode, sessionNumber: Number(n) }, `Sesi #${n} dihapus permanen`);
+      if (await confirmBox(`Hapus sesi #${n}?`, "Sesi ini dihapus dari website dan data. Sesi akan muncul lagi kalau Book dikirim ulang dari game.", "Hapus", true))
+        purgePost("/api/admin/session/delete", { mode: S.mode, sessionNumber: Number(n) }, `Sesi #${n} dihapus`);
       break;
     case "delall": deleteAllForm(); break;
     case "restore": post("/api/admin/session/restore", { mode: S.mode, sessionNumber: Number(n) }, `Sesi #${n} dipulihkan`); break;

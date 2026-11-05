@@ -349,22 +349,22 @@ function vigibSheets(data) {
       rows: [...lb].sort((a, b) => (Number(b.totalPoints) || 0) - (Number(a.totalPoints) || 0)).map((e, i) => [i + 1, e.displayName || "", Number(e.userId) || "", Number(e.totalPoints) || 0, e.sessionCount != null ? Number(e.sessionCount) : ""]) });
   }
   for (const m of ["liga", "normal", "team"]) {
-    const ss = [...((data.modes && data.modes[m] && data.modes[m].sessions) || [])].sort((a, b) => a.sessionNumber - b.sessionNumber);
+    const ss = [...((data.modes && data.modes[m] && data.modes[m].sessions) || [])].sort((a, b) => (a.badge || a.sessionNumber) - (b.badge || b.sessionNumber));
     if (!ss.length) continue;
     const rows = [];
     for (const s of ss) {
       const lp = {}; (s.ligaPoints || []).forEach((l) => { lp[l.userId] = l.points; });
       const ch = [...(s.champions || [])].sort((a, b) => a.rank - b.rank);
-      if (!ch.length) rows.push([s.sessionNumber, d(s.timestamp), "", "(tidak ada yang finish)", "", "", (s.participants || []).length]);
-      ch.forEach((c) => rows.push([s.sessionNumber, d(s.timestamp), Number(c.rank) || "", c.displayName || "", Number(c.userId) || "", m === "liga" ? (lp[c.userId] ?? c.points ?? "") : (c.points ?? ""), (s.participants || []).length]));
+      if (!ch.length) rows.push([s.badge || s.sessionNumber, d(s.timestamp), "", "(tidak ada yang finish)", "", "", (s.participants || []).length]);
+      ch.forEach((c) => rows.push([s.badge || s.sessionNumber, d(s.timestamp), Number(c.rank) || "", c.displayName || "", Number(c.userId) || "", m === "liga" ? (lp[c.userId] ?? c.points ?? "") : (c.points ?? ""), (s.participants || []).length]));
     }
     sheets.push({ name: `Juara ${L[m]}`, cols: [{ h: "Sesi", w: 7 }, { h: "Tanggal", w: 19 }, { h: "Posisi", w: 8 }, { h: "Nama", w: 26 }, { h: "UserId", w: 14 }, { h: m === "liga" ? "Poin Liga" : "Poin", w: 10 }, { h: "Jumlah Peserta", w: 15 }], rows });
     const pr = [];
-    ss.forEach((s) => (s.participants || []).forEach((p) => pr.push([s.sessionNumber, d(s.timestamp), p.displayName || "", Number(p.userId) || "", p.team ? p.team.name || "" : ""])));
+    ss.forEach((s) => (s.participants || []).forEach((p) => pr.push([s.badge || s.sessionNumber, d(s.timestamp), p.displayName || "", Number(p.userId) || "", p.team ? p.team.name || "" : ""])));
     if (pr.length) sheets.push({ name: `Peserta ${L[m]}`, cols: [{ h: "Sesi", w: 7 }, { h: "Tanggal", w: 19 }, { h: "Nama", w: 26 }, { h: "UserId", w: 14 }, { h: "Tim", w: 16 }], rows: pr });
     if (m === "team") {
       const tr = [];
-      ss.forEach((s) => [...(s.teamData || [])].sort((a, b) => (b.points || 0) - (a.points || 0)).forEach((t, i) => tr.push([s.sessionNumber, d(s.timestamp), i + 1, t.name || "", Number(t.points) || 0, Number(t.memberCount) || 0])));
+      ss.forEach((s) => [...(s.teamData || [])].sort((a, b) => (b.points || 0) - (a.points || 0)).forEach((t, i) => tr.push([s.badge || s.sessionNumber, d(s.timestamp), i + 1, t.name || "", Number(t.points) || 0, Number(t.memberCount) || 0])));
       if (tr.length) sheets.push({ name: "Tim per Sesi", cols: [{ h: "Sesi", w: 7 }, { h: "Tanggal", w: 19 }, { h: "Peringkat", w: 10 }, { h: "Tim", w: 20 }, { h: "Poin", w: 9 }, { h: "Anggota", w: 9 }], rows: tr });
     }
   }
@@ -388,7 +388,7 @@ function playerStandings(mode, md) {
     if (name) e.username = name;
     return e;
   };
-  [...sessions].sort((a, b) => a.sessionNumber - b.sessionNumber).forEach((s) => {
+  [...sessions].sort((a, b) => (a.badge || a.sessionNumber) - (b.badge || b.sessionNumber)).forEach((s) => {
     (s.participants || []).forEach((p) => { get(p.userId, p.displayName).sessions += 1; });
     (s.champions || []).forEach((c) => {
       const e = get(c.userId, c.displayName);
@@ -407,7 +407,7 @@ function playerStandings(mode, md) {
 function teamStandings(md) {
   const sessions = (md && md.sessions) || [];
   const map = new Map();
-  [...sessions].sort((a, b) => a.sessionNumber - b.sessionNumber).forEach((s) => {
+  [...sessions].sort((a, b) => (a.badge || a.sessionNumber) - (b.badge || b.sessionNumber)).forEach((s) => {
     const teams = [...(s.teamData || [])].sort((a, b) => (b.points || 0) - (a.points || 0));
     teams.forEach((t, i) => {
       const k = (t.name || "TIM").toUpperCase();
@@ -543,9 +543,9 @@ function render() {
         const champs = [...(s.champions || [])].sort((a, b) => a.rank - b.rank);
         const pts = {}; (s.ligaPoints || []).forEach((l) => { pts[l.userId] = l.points; });
         const teams = [...(s.teamData || [])].sort((a, b) => (b.points || 0) - (a.points || 0));
-        const sessionTitle = s.name || s.title || `Sesi ${s.bookNumber || s.sessionNumber}`; // judul = nomor dari game, badge #N = nomor di website
+        const sessionTitle = s.name || s.title || `Sesi ${s.bookNumber || s.sessionNumber}`; // judul = nomor dari game, badge #N = urutan sesi (1..jumlah sesi)
         return `<div class="sess">
-          <div class="sess-top"><div class="who-cell"><div class="sess-no gold-btn">#${s.sessionNumber}</div>
+          <div class="sess-top"><div class="who-cell"><div class="sess-no gold-btn">#${s.badge || s.sessionNumber}</div>
             <div><div style="font-weight:700">${esc(sessionTitle)}<span class="tagm">${mi.label}</span></div>
             <div class="sub" style="display:flex;align-items:center;gap:4px;margin-top:2px">${ico("calendar")}${fmtDate(s.timestamp)}</div></div></div>
             <span class="muted" style="font-size:12px">${(s.participants || []).length} peserta · ${champs.length} juara${teams.length ? " · " + teams.length + " tim" : ""}</span></div>
@@ -636,7 +636,7 @@ async function load() {
     j.modes = j.modes || {};
     ["liga", "normal", "team"].forEach((k) => {
       const m = j.modes[k] || (j.modes[k] = {});
-      m.sessions = Array.isArray(m.sessions) ? m.sessions.slice().sort((a, b) => b.sessionNumber - a.sessionNumber) : [];
+      m.sessions = Array.isArray(m.sessions) ? m.sessions.slice().sort((a, b) => (b.badge || b.sessionNumber) - (a.badge || a.sessionNumber)) : [];
       if (!Array.isArray(m.ligaLeaderboard) || !m.ligaLeaderboard.length) m.ligaLeaderboard = null;
     });
     S.data = j; S.error = null; S.lastFetch = Date.now();

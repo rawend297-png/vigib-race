@@ -12,12 +12,16 @@
 //   super  -> kelola akun admin (buat, hapus, reset password) + semua hak admin
 //   admin  -> edit / hapus data sesi & klasemen
 //
-// (2026-11-05) Hapus sesi = PERMANEN. Sesi dikenali lewat timestamp (primary key), lalu dicatat di
-//   overlay.purged sebagai "tombstone". Efeknya:
-//   - langsung hilang dari website & panel admin, tidak bisa dipulihkan;
-//   - server Roblox membaca daftar ini (GET /api/reserved), membuang sesi itu dari data.json, dan
-//     TIDAK mengunggahnya lagi walau Book dikirim ulang;
-//   - kalau secret GITHUB_TOKEN dipasang di Cloudflare Pages, data.json di GitHub langsung ikut dibersihkan.
+// (2026-11-05) Hapus sesi = benar-benar dihapus. Sesi dikenali lewat timestamp (primary key), lalu dicatat di
+//   overlay.purged sebagai "tombstone" { k, t = waktu hapus }. Efeknya:
+//   - langsung hilang dari website & panel admin;
+//   - server Roblox membaca daftar ini (GET /api/reserved) dan membuang sesi itu dari data.json;
+//   - kalau secret GITHUB_TOKEN dipasang di Cloudflare Pages, data.json di GitHub langsung ikut dibersihkan;
+//   - (17:50) kalau Book DIKIRIM ULANG dari game, sesi itu MUNCUL LAGI: server game memberi tanda
+//     syncedAt (waktu kirim) pada setiap sesi kiriman, dan tombstone hanya berlaku untuk sesi yang
+//     syncedAt-nya lebih lama dari waktu hapus.
+// (17:50) Badge #N = urutan sesi yang tampil per mode (1 = paling lama, N = jumlah sesi), dihitung ulang
+//   setiap /api/data. sessionNumber tetap dipakai sebagai id internal panel admin.
 //   Variabel opsional: GITHUB_TOKEN (Contents: Read and write), GITHUB_REPO, GITHUB_BRANCH.
 
 const MODES = ["liga", "normal", "team"];
@@ -153,12 +157,28 @@ function stampKey(s) {
 const sigOf = (s) =>
   `${(Array.isArray(s.participants) ? s.participants : []).length}|${(Array.isArray(s.champions) ? s.champions : []).map((c) => `${c && c.userId}:${c && c.rank}`).join(",")}`;
 function tombstone(s, user) {
-  return { k: stampKey(s), b: int(s.bookNumber) || int(s.sessionNumber), sig: sigOf(s), n: int(s.sessionNumber), t: Date.now(), by: user };
+  // t selalu lebih baru dari syncedAt sesi itu (jam server game & Cloudflare bisa beda beberapa detik),
+  // jadi versi yang sedang tampil pasti tersembunyi; baru muncul lagi kalau game mengirim ulang setelahnya.
+  return { k: stampKey(s), b: int(s.bookNumber) || int(s.sessionNumber), sig: sigOf(s), n: int(s.sessionNumber), t: Math.max(Date.now(), int(s.syncedAt) + 1), by: user };
 }
 function addPurged(ov, mode, list) {
-  const ada = new Set(ov.purged[mode].map((e) => Number(e.k)));
-  for (const e of list) if (e.k > 0 && !ada.has(e.k)) { ov.purged[mode].push(e); ada.add(e.k); }
-  if (ov.purged[mode].length > MAX_PURGED) ov.purged[mode] = ov.purged[mode].slice(-MAX_PURGED);
+  // timestamp yang pernah dihapus lalu dikirim ulang dan dihapus lagi: waktu hapusnya diperbarui
+  const byK = new Map(ov.purged[mode].map((e) => [Number(e.k), e]));
+  for (const e of list) if (e.k > 0) { byK.delete(e.k); byK.set(e.k, e); }
+  ov.purged[mode] = [...byK.values()].slice(-MAX_PURGED);
+}
+// tombstone berlaku hanya untuk sesi yang terakhir dikirim game SEBELUM dihapus
+function purgeMap(ov, m) {
+  const map = new Map();
+  for (const e of ov.purged[m] || []) if (Number(e.k) > 0) map.set(Number(e.k), int(e.t));
+  return map;
+}
+const isHidden = (map, s) => { const k = stampKey(s); return k > 0 && map.has(k) && map.get(k) > int(s.syncedAt); };
+// Badge #N = urutan sesi per mode: 1 = paling lama, N = jumlah sesi. Daftar diurutkan terbaru dulu.
+function assignBadges(sessions) {
+  const asc = sessions.slice().sort((a, b) => (stampKey(a) - stampKey(b)) || (int(a.sessionNumber) - int(b.sessionNumber)));
+  asc.forEach((s, i) => { s.badge = i + 1; });
+  return asc.reverse();
 }
 
 // Buang sesi yang sudah dihapus permanen dari data mentah (data.json). Klasemen liga dikurangi poin
@@ -167,9 +187,9 @@ function purgeData(d, ov) {
   const changed = [];
   for (const m of MODES) {
     const md = d.modes[m];
-    const keys = new Set((ov.purged[m] || []).map((e) => Number(e.k)).filter((k) => k > 0));
+    const map = purgeMap(ov, m);
     const keep = [], gone = [];
-    for (const s of md.sessions) (keys.has(stampKey(s)) ? gone : keep).push(s);
+    for (const s of md.sessions) (isHidden(map, s) ? gone : keep).push(s);
     let ubah = gone.length > 0;
     md.sessions = keep;
     if (m === "liga" && Array.isArray(md.ligaLeaderboard)) {
@@ -266,7 +286,7 @@ function reservedNumbers(ov) {
 // daftar hapus permanen untuk server Roblox (VigibWebsite.fetchReserved)
 function purgedList(ov) {
   const out = {};
-  for (const m of MODES) out[m] = (ov.purged[m] || []).map((e) => ({ k: Number(e.k) || 0, b: int(e.b), sig: str(e.sig, 4000) }));
+  for (const m of MODES) out[m] = (ov.purged[m] || []).map((e) => ({ k: Number(e.k) || 0, t: int(e.t) }));
   return out;
 }
 
@@ -410,8 +430,8 @@ function applyOverlay(d, ov) {
     md.sessions = md.sessions
       .map((s) => (ed[s.sessionNumber] && !added.has(Number(s.sessionNumber)) ? ed[s.sessionNumber] : s))
       .concat(tambahan)
-      .filter((s) => !del.has(Number(s.sessionNumber)))
-      .sort((a, b) => b.sessionNumber - a.sessionNumber);
+      .filter((s) => !del.has(Number(s.sessionNumber)));
+    md.sessions = assignBadges(md.sessions);
   }
   const lb = Array.isArray(d.modes.liga.ligaLeaderboard) ? d.modes.liga.ligaLeaderboard : [];
   const lbDel = new Set((ov.lbDeleted.liga || []).map(String));
