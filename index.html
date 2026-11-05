@@ -69,7 +69,7 @@ header .glow{position:absolute;right:-40px;top:-40px;width:200px;height:200px;bo
 .mode.active .count{background:rgba(28,22,14,.15)}
 
 /* stats */
-.stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
 .stat{padding:16px;display:flex;align-items:center;justify-content:space-between;gap:12px;border-radius:14px}
 .stat .k{font-size:11px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.08em}
 .stat .v{font-family:var(--display);font-weight:800;font-size:18px;margin:3px 0 1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -128,7 +128,7 @@ tbody tr:hover .nm{color:var(--gold)}
 .rank.r1{background:linear-gradient(180deg,#ffecc4,#e2ba70);color:var(--ink);box-shadow:0 4px 12px rgba(226,186,112,.25)}
 .rank.r2{background:#d9d4cb;color:var(--ink)} .rank.r3{background:var(--lo);color:var(--hi)}
 .rank.rn{color:var(--muted);font-weight:700}
-.pts{font-family:var(--display);font-weight:800;font-size:15px;background:rgba(11,9,7,.8);border:1px solid var(--line);padding:4px 12px;border-radius:9px;white-space:nowrap}
+.pts{font-family:var(--display);font-weight:800;font-size:15px;background:rgba(11,9,7,.8);border:1px solid var(--line);padding:4px 12px;border-radius:99px;white-space:nowrap}
 .pts small{font-family:var(--sans);font-size:10px;color:var(--gold);font-weight:700}
 .tbar{width:12px;height:36px;border-radius:99px;flex-shrink:0}
 
@@ -141,7 +141,7 @@ tbody tr:hover .nm{color:var(--gold)}
 .chips{display:flex;flex-wrap:wrap;gap:8px}
 .chip{display:inline-flex;align-items:center;gap:8px;padding:6px 12px;border-radius:9px;background:rgba(46,39,29,.7);border:1px solid rgba(88,72,50,.7);font-size:12px}
 .dotc{width:8px;height:8px;border-radius:50%}
-.champs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.champs{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
 .champ{display:flex;align-items:center;gap:10px;border-radius:10px;padding:8px 12px;border:1px solid rgba(88,72,50,.6);background:rgba(34,29,23,.6);min-width:0}
 .champ.first{border-color:rgba(226,186,112,.5);background:rgba(226,186,112,.1)}
 .champ .md{width:24px;text-align:center;font-size:16px}
@@ -167,11 +167,9 @@ footer img{width:20px;height:20px}
 .xbtn:hover{filter:brightness(1.06)}
 @media (min-width:1500px){ .wrap{max-width:1400px} }
 @media (max-width:1100px){ .stats{gap:12px} .stat .v{font-size:16px} }
-@media (max-width:1000px){ .stats{grid-template-columns:repeat(2,minmax(0,1fr))} }
-html,body{overflow-x:clip}
 @media (max-width:900px){
-  .stats{grid-template-columns:repeat(2,minmax(0,1fr))}
-  .champs{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .stats{grid-template-columns:repeat(2,1fr)}
+  .champs{grid-template-columns:repeat(2,1fr)}
   header.panel{justify-content:center;text-align:center}
   .brand{justify-content:center}
   .tabs{width:100%;justify-content:center}
@@ -183,9 +181,9 @@ html,body{overflow-x:clip}
   .brand img{width:46px;height:46px}
   .brand h1{font-size:21px}
   .brand p{font-size:12px}
-  .tabs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr))}
+  .tabs{display:grid;grid-template-columns:repeat(3,1fr)}
   .tab{padding:8px 6px;font-size:12px;justify-content:center}
-  .modes .panel{width:100%;display:grid;grid-template-columns:repeat(3,minmax(0,1fr))}
+  .modes .panel{width:100%;display:grid;grid-template-columns:repeat(3,1fr)}
   .mode{padding:9px 4px;font-size:11px;letter-spacing:.06em;justify-content:center;gap:5px}
   .mode .ico{display:none}
   .main{padding:14px 12px;gap:14px}
@@ -196,7 +194,7 @@ html,body{overflow-x:clip}
   .stat .badge{width:32px;height:32px}.stat .badge .ico{width:16px;height:16px}
   .pcol{width:30%;max-width:110px}
   .podium{gap:8px}
-  .champs{grid-template-columns:minmax(0,1fr)}
+  .champs{grid-template-columns:1fr}
   .filters{flex-direction:column;align-items:stretch}
   .search{max-width:none;min-width:0}
   .ctrl{flex-wrap:wrap}
@@ -223,7 +221,7 @@ html,body{overflow-x:clip}
   .toast{left:10px;right:10px}
 }
 @media (max-width:380px){
-  .stats{grid-template-columns:minmax(0,1fr)}
+  .stats{grid-template-columns:1fr}
   .brand h1{font-size:18px}
   .rank{width:24px;height:24px;font-size:11px}
 }
@@ -246,7 +244,6 @@ const MODE_INFO = {
 };
 const MEDAL = { 1: "🥇", 2: "🥈", 3: "🥉" };
 
-// ---------- ikon (gaya Lucide) ----------
 const P = {
   trophy: '<path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/>',
   flag: '<path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" x2="4" y1="22" y2="15"/>',
@@ -266,7 +263,6 @@ const P = {
 };
 const ico = (n, cls = "") => `<svg class="ico ${cls}" viewBox="0 0 24 24" aria-hidden="true">${P[n] || ""}</svg>`;
 
-// ---------- util ----------
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 const fmtDate = (unix) => {
   if (!unix) return "-";
@@ -283,8 +279,6 @@ const timeAgo = (ms) => {
   return Math.floor(s / 86400) + " hari lalu";
 };
 
-// ---------- ekspor Excel (.xlsx) tanpa library ----------
-// sheets: [{ name, cols:[{h, w}], rows:[[...]] }]  -> file .xlsx (zip "stored" + CRC32)
 const XLSX = (() => {
   const enc = new TextEncoder();
   const CRC = (() => { const t = new Uint32Array(256); for (let n = 0; n < 256; n++) { let c = n; for (let k = 0; k < 8; k++) c = c & 1 ? 0xEDB88320 ^ (c >>> 1) : c >>> 1; t[n] = c >>> 0; } return t; })();
@@ -345,7 +339,6 @@ const XLSX = (() => {
   return { build, download };
 })();
 
-// isi workbook VIGIB Race dari data (modes.liga/normal/team)
 function vigibSheets(data) {
   const L = { liga: "LIGA", normal: "NORMAL", team: "TEAM" };
   const d = (u) => (u ? new Date(Number(u) * 1000) : "");
@@ -383,10 +376,8 @@ function vigibExcelName() {
   return `VIGIB_Race_${t.getFullYear()}-${p(t.getMonth() + 1)}-${p(t.getDate())}_${p(t.getHours())}${p(t.getMinutes())}.xlsx`;
 }
 
-// ---------- state ----------
 const S = { data: null, error: null, lastFetch: 0, avatars: {}, tab: "standings", mode: "liga", q: "", sortBy: "default", order: "desc", known: null };
 
-// ---------- hitung klasemen ----------
 function playerStandings(mode, md) {
   const sessions = (md && md.sessions) || [];
   const map = new Map();
@@ -407,7 +398,6 @@ function playerStandings(mode, md) {
     });
     if (mode === "liga") (s.ligaPoints || []).forEach((l) => { get(l.userId, l.displayName).points += Number(l.points) || 0; });
   });
-  // klasemen liga resmi dari game (akumulatif) diutamakan
   if (mode === "liga" && md && Array.isArray(md.ligaLeaderboard) && md.ligaLeaderboard.length) {
     map.forEach((e) => { e.points = 0; });
     md.ligaLeaderboard.forEach((l) => { get(l.userId, l.displayName).points = Number(l.totalPoints) || 0; });
@@ -448,7 +438,6 @@ function computeRows() {
 }
 const valueOf = (d) => S.mode === "normal" ? `${d.wins}× Juara 1` : `${d.points} PTS`;
 
-// ---------- potongan tampilan ----------
 function avatar(userId, name, size = 36, big = false) {
   const src = S.avatars[String(userId)];
   const inner = src ? `<img src="${esc(src)}" alt="${esc(name)}" loading="lazy">` : esc((name || "?").slice(0, 2).toUpperCase());
@@ -478,7 +467,6 @@ function podium(top) {
   }).join("")}</div>`;
 }
 
-// ---------- render ----------
 function render() {
   const { md, ranked, rows } = computeRows();
   const sessions = md.sessions || [];
@@ -555,9 +543,10 @@ function render() {
         const champs = [...(s.champions || [])].sort((a, b) => a.rank - b.rank);
         const pts = {}; (s.ligaPoints || []).forEach((l) => { pts[l.userId] = l.points; });
         const teams = [...(s.teamData || [])].sort((a, b) => (b.points || 0) - (a.points || 0));
+        const sessionTitle = s.name || s.title || `Sesi ${s.sessionNumber}`;
         return `<div class="sess">
           <div class="sess-top"><div class="who-cell"><div class="sess-no gold-btn">#${s.sessionNumber}</div>
-            <div><div style="font-weight:700">Sesi ${s.sessionNumber}<span class="tagm">${mi.label}</span></div>
+            <div><div style="font-weight:700">${esc(sessionTitle)}<span class="tagm">${mi.label}</span></div>
             <div class="sub" style="display:flex;align-items:center;gap:4px;margin-top:2px">${ico("calendar")}${fmtDate(s.timestamp)}</div></div></div>
             <span class="muted" style="font-size:12px">${(s.participants || []).length} peserta · ${champs.length} juara${teams.length ? " · " + teams.length + " tim" : ""}</span></div>
           ${teams.length ? `<div class="chips">${teams.map((t, i) => `<span class="chip"><span class="dotc" style="background:${esc(t.colorHex)}"></span><b>#${i + 1} ${esc(t.name)}</b><span class="gold" style="font-weight:600">${t.points} PTS</span></span>`).join("")}</div>` : ""}
@@ -580,14 +569,12 @@ function render() {
     <div class="f"><span>Diperbarui otomatis tiap 30 detik</span><span>•</span><a href="${ROBLOX_GAME_URL}" target="_blank" rel="noopener">Main di Roblox</a><span>•</span><a href="admin.html">Admin</a></div></footer>
   ${S.toast ? `<div class="panel toast">${ico("sparkles")}<span>${esc(S.toast)}</span></div>` : ""}`;
 
-  // simpan fokus & posisi kursor pencarian
   const active = document.activeElement && document.activeElement.id === "q";
   const caret = active ? document.activeElement.selectionStart : null;
   document.getElementById("app").innerHTML = html;
   if (active) { const i = document.getElementById("q"); i.focus(); i.setSelectionRange(caret, caret); }
 }
 
-// ---------- event ----------
 document.getElementById("app").addEventListener("click", (e) => {
   const t = e.target.closest("[data-tab],[data-mode],#order,#reload,#excel");
   if (!t) return;
@@ -605,7 +592,6 @@ document.getElementById("app").addEventListener("click", (e) => {
 document.getElementById("app").addEventListener("input", (e) => { if (e.target.id === "q") { S.q = e.target.value; render(); } });
 document.getElementById("app").addEventListener("change", (e) => { if (e.target.id === "sort") { S.sortBy = e.target.value; render(); } });
 
-// ---------- confetti emas (tanpa library) ----------
 function confetti() {
   const cv = document.getElementById("confetti"), cx = cv.getContext("2d");
   cv.width = innerWidth; cv.height = innerHeight;
@@ -621,7 +607,6 @@ function confetti() {
 }
 function toast(msg) { S.toast = msg; render(); clearTimeout(toast.t); toast.t = setTimeout(() => { S.toast = null; render(); }, 4500); }
 
-// ---------- data ----------
 async function loadAvatars() {
   const ids = new Set();
   Object.values((S.data && S.data.modes) || {}).forEach((m) => {
@@ -631,7 +616,6 @@ async function loadAvatars() {
     });
     (m.ligaLeaderboard || []).forEach((l) => l.userId && ids.add(String(l.userId)));
   });
-  // avatar sudah disiapkan server Roblox di data.json
   const map = (S.data && S.data.avatars && !Array.isArray(S.data.avatars)) ? S.data.avatars : {};
   let changed = false;
   ids.forEach((id) => { const v = map[id] || null; if (S.avatars[id] !== v) { S.avatars[id] = v; changed = true; } });
@@ -639,7 +623,6 @@ async function loadAvatars() {
 }
 async function load() {
   try {
-    // /api/data = data.json + perubahan dari panel admin (Cloudflare). Cadangan: data.json langsung.
     let j = null;
     try {
       const ra = await fetch("/api/data?t=" + Date.now(), { cache: "no-store" });
@@ -660,7 +643,6 @@ async function load() {
     const total = Object.values(j.modes || {}).reduce((n, m) => n + ((m.sessions && m.sessions.length) || 0), 0);
     if (S.known !== null && total > S.known) { confetti(); toast(`🏆 ${total - S.known} sesi baru masuk!`); }
     S.known = total;
-    // buka mode yang punya data kalau mode aktif masih kosong (kunjungan pertama)
     if (!load.done) {
       load.done = true;
       if (!(j.modes[S.mode] && j.modes[S.mode].sessions.length)) {

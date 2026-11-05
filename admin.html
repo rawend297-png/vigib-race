@@ -108,7 +108,7 @@ tr.deleted td{opacity:.5}
 .log td{font-size:12.5px}
 .add-row{margin-top:6px;align-self:flex-start}
 input.cell.dt{min-width:190px}
-/* (2026-11-04) responsif: tablet & HP */
+
 @media (max-width:900px){
   .wrap{padding:18px 14px}
   .tabs{width:100%;overflow-x:auto;flex-wrap:nowrap;scrollbar-width:none}
@@ -131,7 +131,6 @@ input.cell.dt{min-width:190px}
   .modal .tw table input.cell{min-width:70px}
   .modal-bg{padding:2vh 8px}
   .foot .btn{flex:1;justify-content:center}
-  /* tabel jadi kartu bertumpuk */
   table.stack thead{display:none}
   table.stack,table.stack tbody,table.stack tr,table.stack td{display:block;width:100%}
   table.stack tr{padding:10px 12px;border-bottom:1px solid rgba(88,72,50,.5)}
@@ -201,8 +200,6 @@ async function run(fn, okMsg) {
   finally { S.busy = false; }
 }
 
-// ---------- ekspor Excel (.xlsx) tanpa library ----------
-// sheets: [{ name, cols:[{h, w}], rows:[[...]] }]  -> file .xlsx (zip "stored" + CRC32)
 const XLSX = (() => {
   const enc = new TextEncoder();
   const CRC = (() => { const t = new Uint32Array(256); for (let n = 0; n < 256; n++) { let c = n; for (let k = 0; k < 8; k++) c = c & 1 ? 0xEDB88320 ^ (c >>> 1) : c >>> 1; t[n] = c >>> 0; } return t; })();
@@ -263,7 +260,6 @@ const XLSX = (() => {
   return { build, download };
 })();
 
-// isi workbook VIGIB Race dari data (modes.liga/normal/team)
 function vigibSheets(data) {
   const L = { liga: "LIGA", normal: "NORMAL", team: "TEAM" };
   const d = (u) => (u ? new Date(Number(u) * 1000) : "");
@@ -301,7 +297,6 @@ function vigibExcelName() {
   return `VIGIB_Race_${t.getFullYear()}-${p(t.getMonth() + 1)}-${p(t.getDate())}_${p(t.getHours())}${p(t.getMinutes())}.xlsx`;
 }
 
-// ---------- data ----------
 async function loadState() {
   const j = await api("/api/admin/state");
   S.raw = j.raw; S.ov = j.overlay; S.conflicts = Array.isArray(j.conflicts) ? j.conflicts : [];
@@ -337,7 +332,6 @@ function leaderboardView() {
     .concat(tambahan).sort((a, b) => (Number(b.cur.totalPoints) || 0) - (Number(a.cur.totalPoints) || 0));
 }
 
-// ---------- render ----------
 function render() {
   const app = $("#app");
   if (!S.user && S.setup && S.setup.needed) { app.innerHTML = setupView(); bindSetup(); return; }
@@ -436,9 +430,10 @@ function sesiBody() {
     : "";
   const items = list.map(({ cur, edited, deleted, added }) => {
     const champs = (cur.champions || []).slice().sort((a, b) => a.rank - b.rank).slice(0, 3).map((c) => `${c.rank}. ${esc(c.displayName)}`).join(" · ");
+    const nameLabel = cur.name || cur.title || `Sesi #${cur.sessionNumber}`;
     return `<div class="item ${deleted ? "deleted" : ""}">
-      <div><div class="t">Sesi #${cur.sessionNumber} ${added ? `<span class="tag ed">Ditambah admin</span>` : ""} ${bentrok.has(Number(cur.sessionNumber)) ? `<span class="tag warn">Bentrok</span>` : ""} ${edited ? `<span class="tag ed">Diedit</span>` : ""} ${deleted ? `<span class="tag del">Dihapus</span>` : ""}</div>
-        <div class="s">${fmtDate(cur.timestamp)} · ${(cur.participants || []).length} peserta${champs ? " · " + champs : ""}</div></div>
+      <div><div class="t">${esc(nameLabel)} ${added ? `<span class="tag ed">Ditambah admin</span>` : ""} ${bentrok.has(Number(cur.sessionNumber)) ? `<span class="tag warn">Bentrok</span>` : ""} ${edited ? `<span class="tag ed">Diedit</span>` : ""} ${deleted ? `<span class="tag del">Dihapus</span>` : ""}</div>
+        <div class="s">Nomor #${cur.sessionNumber} · ${fmtDate(cur.timestamp)} · ${(cur.participants || []).length} peserta${champs ? " · " + champs : ""}</div></div>
       <div class="acts">
         ${deleted ? `<button class="btn sm" data-act="restore" data-n="${cur.sessionNumber}">${ico("undo")} Pulihkan</button>`
           : `<button class="btn sm" data-act="edit" data-n="${cur.sessionNumber}">${ico("edit")} Edit</button>
@@ -541,6 +536,7 @@ const COLS = {
   participants: [{ f: "displayName", l: "Nama" }, { f: "userId", l: "UserId", num: 1 }],
   teamData: [{ f: "name", l: "Tim" }, { f: "points", l: "Poin", num: 1 }, { f: "memberCount", l: "Anggota", num: 1 }],
 };
+
 function editSession(n, baru) {
   let v = sessionsView(S.mode).find((x) => Number(x.cur.sessionNumber) === Number(n));
   if (!v && baru) v = { cur: { sessionNumber: Number(n), timestamp: Math.floor(Date.now() / 1000), mode: S.mode, champions: [], participants: [], ...(S.mode === "liga" ? { ligaPoints: [] } : {}), ...(S.mode === "team" ? { teamData: [] } : {}) }, edited: false };
@@ -550,9 +546,16 @@ function editSession(n, baru) {
   if (S.mode === "liga" || s.ligaPoints) secs.push(rowsEditor("ligaPoints", "Poin Liga Sesi Ini", s.ligaPoints || [], COLS.ligaPoints));
   if (S.mode === "team" || s.teamData) secs.push(rowsEditor("teamData", "Tim", s.teamData || [], COLS.teamData));
   secs.push(rowsEditor("participants", "Peserta", s.participants || [], COLS.participants));
-  openModal(`<h3>${baru ? "Tambah" : "Edit"} Sesi ${MODES[S.mode]} #${s.sessionNumber}</h3>
+
+  openModal(`<h3>${baru ? "Tambah" : "Edit"} Sesi ${MODES[S.mode]}</h3>
     <div class="muted" style="font-size:12.5px;margin-top:-8px">${baru ? "Sesi baru dibuat dari panel admin" : fmtDate(s.timestamp)}${v.edited ? " · sudah pernah diedit" : ""}</div>
-    <div class="grid2"><div><label class="lb" for="sessDate">Tanggal & jam</label><input class="cell dt" id="sessDate" type="datetime-local" value="${toLocalInput(s.timestamp)}"></div></div>
+    <div class="grid2">
+      <div><label class="lb" for="sessNum">Nomor Sesi (Book)</label><input class="cell n" id="sessNum" type="number" min="1" value="${s.sessionNumber || ""}"></div>
+      <div><label class="lb" for="sessName">Nama Sesi (Opsional)</label><input class="cell" id="sessName" value="${esc(s.name || s.title || "")}" placeholder="Contoh: Sesi 5"></div>
+    </div>
+    <div class="grid2" style="margin-top:8px">
+      <div><label class="lb" for="sessDate">Tanggal & jam</label><input class="cell dt" id="sessDate" type="datetime-local" value="${toLocalInput(s.timestamp)}"></div>
+    </div>
     ${secs.join("")}
     <div class="foot"><button class="btn" data-close>Batal</button><button class="btn gold" id="saveSess">Simpan Perubahan</button></div>`, (m) => {
     m.addEventListener("click", (e) => {
@@ -581,16 +584,20 @@ function editSession(n, baru) {
         });
       };
       const out = { ...s };
+      const numInput = Number($("#sessNum", m).value);
+      if (numInput > 0) out.sessionNumber = numInput;
+      const nameInput = $("#sessName", m).value.trim();
+      if (nameInput) out.name = nameInput; else delete out.name;
+
       const dv = $("#sessDate", m).value;
       if (dv) { const t = new Date(dv).getTime(); if (!isNaN(t)) out.timestamp = Math.floor(t / 1000); }
       ["champions", "ligaPoints", "teamData", "participants"].forEach((k) => { const r = read(k); if (r !== undefined) out[k] = r; });
       run(async () => {
         const j = await api("/api/admin/session/save", { mode: S.mode, session: out, isNew: !!baru });
         S.ov = j.overlay; closeModal(); render();
-      }, `Sesi #${s.sessionNumber} ${baru ? "ditambahkan" : "disimpan"}`);
+      }, `Sesi #${out.sessionNumber} ${baru ? "ditambahkan" : "disimpan"}`);
     });
   });
-  // tandai indeks asli tiap baris supaya data tambahan (team, members) tidak hilang saat baris lain dihapus
   $("#modal").querySelectorAll("[data-sec]").forEach((sec) => sec.querySelectorAll("tbody tr:not(.none)").forEach((tr, i) => { tr.dataset.i = i; }));
 }
 
@@ -613,7 +620,6 @@ function lbAddForm() {
 }
 
 async function downloadExcel() {
-  // data yang sama dengan website (data game + perubahan admin)
   const r = await fetch("/api/data?t=" + Date.now(), { cache: "no-store", credentials: "same-origin" });
   if (!r.ok) throw new Error("Gagal mengambil data (" + r.status + ")");
   const d = await r.json();
@@ -685,7 +691,6 @@ function passwordForm() {
   }, "sm");
 }
 
-// ---------- events ----------
 function bindMain() {
   const app = $("#app");
   app.querySelectorAll("[data-tab]").forEach((b) => b.addEventListener("click", () => {
@@ -707,7 +712,7 @@ async function onAct(b) {
     case "newsess": {
       const all = sessionsView(S.mode).map((x) => Number(x.cur.sessionNumber));
       const deletedNums = (S.ov.deleted[S.mode] || []).map(Number);
-      const maxPernah = Number(((S.ov.maxNum || {})[S.mode]) || 0); // nomor tertinggi yang pernah dipakai (sama dengan aturan server)
+      const maxPernah = Number(((S.ov.maxNum || {})[S.mode]) || 0);
       editSession(Math.max(0, ...all, ...deletedNums, maxPernah) + 1, true);
       break;
     }
@@ -754,7 +759,6 @@ async function onAct(b) {
   }
 }
 
-// ---------- mulai ----------
 (async () => {
   render();
   try {

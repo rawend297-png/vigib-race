@@ -117,9 +117,7 @@ function emptyOverlay() {
     edits: { liga: {}, normal: {}, team: {} },
     lbEdits: { liga: {} },
     lbDeleted: { liga: [] },
-    // nomor sesi yang dibuat lewat panel admin (dilindungi dari bentrok dengan sesi game)
     added: { liga: [], normal: [], team: [] },
-    // nomor sesi tertinggi yang pernah dipakai per mode (tidak turun walau sesi dihapus)
     maxNum: { liga: 0, normal: 0, team: 0 },
   };
 }
@@ -130,7 +128,6 @@ async function getOverlay(env) {
   return ov;
 }
 
-// Sesi buatan admin yang nomornya kini juga dipakai sesi asli dari game
 function findConflicts(raw, ov) {
   const out = [];
   for (const m of MODES) {
@@ -142,8 +139,6 @@ function findConflicts(raw, ov) {
   return out;
 }
 
-// Nomor sesi yang "dipegang" panel admin (hasil edit, dihapus, buatan admin, dan nomor tertinggi yang pernah dipakai).
-// Dibaca server Roblox (VigibWebsite) lewat GET /api/reserved supaya sesi dari Book tidak mendarat di nomor ini.
 function reservedNumbers(ov) {
   const out = {};
   for (const m of MODES) {
@@ -295,7 +290,6 @@ function applyOverlay(d, ov) {
     const ada = new Set(md.sessions.map((s) => Number(s.sessionNumber)));
     const tambahan = Object.keys(ed).map(Number).filter((n) => !ada.has(n)).map((n) => ({ ...ed[n], addedByAdmin: true }));
     md.sessions = md.sessions
-      // sesi asli dari game yang nomornya sama dengan sesi buatan admin tidak ditimpa
       .map((s) => (ed[s.sessionNumber] && !added.has(Number(s.sessionNumber)) ? ed[s.sessionNumber] : s))
       .concat(tambahan)
       .filter((s) => !del.has(Number(s.sessionNumber)))
@@ -317,8 +311,10 @@ function applyOverlay(d, ov) {
 function cleanSession(s, mode, n) {
   const out = {
     sessionNumber: n,
-    timestamp: int(s.timestamp) || Date.now(), // Fallback ke waktu sekarang jika timestamp kosong
+    timestamp: int(s.timestamp) || Date.now(),
     mode,
+    ...(s.name ? { name: str(s.name, 64) } : {}),
+    ...(s.title ? { title: str(s.title, 64) } : {}),
     champions: (Array.isArray(s.champions) ? s.champions : []).slice(0, 60).map((c) => ({
       userId: int(c.userId), displayName: str(c.displayName), rank: int(c.rank),
       ...(c.points != null && c.points !== "" ? { points: num(c.points) } : {}),
@@ -358,9 +354,8 @@ async function adminAction(path, request, env, user) {
       const sessionToSave = body.session || {};
       let n = int(sessionToSave.sessionNumber);
 
-      if (body.isNew || n <= 0) {
-        // Nomor baru = di atas SEMUA nomor yang pernah ada, termasuk yang sudah dihapus,
-        // supaya nomor sesi terhapus tidak dipakai ulang dan tidak langsung "hilang".
+      if (n <= 0) {
+        // Jika nomor sesi TIDAK diisi (<= 0), hitung otomatis (nomor tertinggi + 1)
         const terpakai = [
           ...rawNums,
           ...Object.keys(ov.edits[mode]).map(Number),
@@ -368,12 +363,14 @@ async function adminAction(path, request, env, user) {
           int(ov.maxNum[mode]),
         ];
         n = Math.max(0, ...terpakai) + 1;
-        ov.maxNum[mode] = n;
+        ov.maxNum[mode] = Math.max(int(ov.maxNum[mode]), n);
+        if (!ov.added[mode].includes(n)) ov.added[mode].push(n);
+      } else if (body.isNew) {
+        // Sesi baru dengan nomor spesifik yang diinput dari form/book (n > 0)
+        ov.maxNum[mode] = Math.max(int(ov.maxNum[mode]), n);
         if (!ov.added[mode].includes(n)) ov.added[mode].push(n);
       } else {
-        // Edit hanya untuk sesi yang memang ada dan tidak sedang dihapus.
-        const ada = rawNums.includes(n) || String(n) in ov.edits[mode];
-        if (!ada) throw new HttpError(`Sesi #${n} tidak ditemukan. Gunakan "tambah sesi baru".`, 404);
+        // Edit sesi yang sudah ada
         if (ov.deleted[mode].map(Number).includes(n)) throw new HttpError(`Sesi #${n} sedang dihapus. Pulihkan dulu.`, 409);
       }
 
@@ -387,7 +384,6 @@ async function adminAction(path, request, env, user) {
       if (!mode) throw new HttpError("Mode tidak dikenal");
       const n = int(body.sessionNumber);
       delete ov.edits[mode][n];
-      // sesi buatan admin yang dibatalkan: lepas dari daftar added (maxNum tetap, nomor tidak dipakai ulang)
       ov.added[mode] = ov.added[mode].filter((x) => Number(x) !== n);
       detail = `batalkan edit ${mode} #${n}`;
       break;
