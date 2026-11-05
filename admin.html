@@ -430,7 +430,7 @@ function sesiBody() {
     : "";
   const items = list.map(({ cur, edited, deleted, added }) => {
     const champs = (cur.champions || []).slice().sort((a, b) => a.rank - b.rank).slice(0, 3).map((c) => `${c.rank}. ${esc(c.displayName)}`).join(" · ");
-    const nameLabel = cur.name || cur.title || `Sesi #${cur.sessionNumber}`;
+    const nameLabel = cur.name || cur.title || `Sesi ${cur.bookNumber || cur.sessionNumber}`; // judul = nomor dari game, "Nomor #N" di bawahnya = nomor di website
     return `<div class="item ${deleted ? "deleted" : ""}">
       <div><div class="t">${esc(nameLabel)} ${added ? `<span class="tag ed">Ditambah admin</span>` : ""} ${bentrok.has(Number(cur.sessionNumber)) ? `<span class="tag warn">Bentrok</span>` : ""} ${edited ? `<span class="tag ed">Diedit</span>` : ""} ${deleted ? `<span class="tag del">Dihapus</span>` : ""}</div>
         <div class="s">Nomor #${cur.sessionNumber} · ${fmtDate(cur.timestamp)} · ${(cur.participants || []).length} peserta${champs ? " · " + champs : ""}</div></div>

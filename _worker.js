@@ -311,6 +311,8 @@ function applyOverlay(d, ov) {
 function cleanSession(s, mode, n) {
   const out = {
     sessionNumber: n,
+    // nomor sesi dari game (Book). Dipakai untuk judul "Sesi N"; badge #N tetap sessionNumber website.
+    ...(int(s.bookNumber) > 0 ? { bookNumber: int(s.bookNumber) } : {}),
     timestamp: int(s.timestamp) || Date.now(),
     mode,
     ...(s.name ? { name: str(s.name, 64) } : {}),

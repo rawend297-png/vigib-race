@@ -543,7 +543,7 @@ function render() {
         const champs = [...(s.champions || [])].sort((a, b) => a.rank - b.rank);
         const pts = {}; (s.ligaPoints || []).forEach((l) => { pts[l.userId] = l.points; });
         const teams = [...(s.teamData || [])].sort((a, b) => (b.points || 0) - (a.points || 0));
-        const sessionTitle = s.name || s.title || `Sesi ${s.sessionNumber}`;
+        const sessionTitle = s.name || s.title || `Sesi ${s.bookNumber || s.sessionNumber}`; // judul = nomor dari game, badge #N = nomor di website
         return `<div class="sess">
           <div class="sess-top"><div class="who-cell"><div class="sess-no gold-btn">#${s.sessionNumber}</div>
             <div><div style="font-weight:700">${esc(sessionTitle)}<span class="tagm">${mi.label}</span></div>
