@@ -11,6 +11,14 @@
 // Akun:
 //   super  -> kelola akun admin (buat, hapus, reset password) + semua hak admin
 //   admin  -> edit / hapus data sesi & klasemen
+//
+// (2026-11-05) Hapus sesi = PERMANEN. Sesi dikenali lewat timestamp (primary key), lalu dicatat di
+//   overlay.purged sebagai "tombstone". Efeknya:
+//   - langsung hilang dari website & panel admin, tidak bisa dipulihkan;
+//   - server Roblox membaca daftar ini (GET /api/reserved), membuang sesi itu dari data.json, dan
+//     TIDAK mengunggahnya lagi walau Book dikirim ulang;
+//   - kalau secret GITHUB_TOKEN dipasang di Cloudflare Pages, data.json di GitHub langsung ikut dibersihkan.
+//   Variabel opsional: GITHUB_TOKEN (Contents: Read and write), GITHUB_REPO, GITHUB_BRANCH.
 
 const MODES = ["liga", "normal", "team"];
 const SUPER_USERNAME = "Hanrietsuki";
@@ -119,13 +127,116 @@ function emptyOverlay() {
     lbDeleted: { liga: [] },
     added: { liga: [], normal: [], team: [] },
     maxNum: { liga: 0, normal: 0, team: 0 },
+    purged: { liga: [], normal: [], team: [] }, // tombstone hapus permanen: [{ k, b, sig, n, t, by }]
+    lbClearedAt: 0, // waktu "Hapus Semua" liga: klasemen data.json yang lebih lama dari ini diabaikan
   };
 }
 async function getOverlay(env) {
   const ov = (await kvJson(env, "overlay")) || emptyOverlay();
   const base = emptyOverlay();
-  for (const k of Object.keys(base)) ov[k] = Object.assign(base[k], ov[k] || {});
+  for (const k of Object.keys(base)) {
+    ov[k] = base[k] !== null && typeof base[k] === "object" ? Object.assign(base[k], ov[k] || {}) : (ov[k] ?? base[k]);
+  }
   return ov;
+}
+
+// ---------- hapus permanen (PRIMARY KEY sesi = timestamp) ----------
+// Kunci selalu milidetik: detik Unix dari game dikali 1000, milidetik dipakai apa adanya.
+// HARUS sama dengan stampKey() di VigibWebsite (Roblox).
+const MAX_PURGED = 3000;
+function stampKey(s) {
+  const t = Math.floor(Number(s && s.timestamp));
+  if (!Number.isFinite(t) || t <= 0) return 0;
+  return t < 1e11 ? t * 1000 : t;
+}
+// sidik jari isi sesi; HARUS sama dengan sigOf() di VigibWebsite (untuk sesi Book lama tanpa timestamp)
+const sigOf = (s) =>
+  `${(Array.isArray(s.participants) ? s.participants : []).length}|${(Array.isArray(s.champions) ? s.champions : []).map((c) => `${c && c.userId}:${c && c.rank}`).join(",")}`;
+function tombstone(s, user) {
+  return { k: stampKey(s), b: int(s.bookNumber) || int(s.sessionNumber), sig: sigOf(s), n: int(s.sessionNumber), t: Date.now(), by: user };
+}
+function addPurged(ov, mode, list) {
+  const ada = new Set(ov.purged[mode].map((e) => Number(e.k)));
+  for (const e of list) if (e.k > 0 && !ada.has(e.k)) { ov.purged[mode].push(e); ada.add(e.k); }
+  if (ov.purged[mode].length > MAX_PURGED) ov.purged[mode] = ov.purged[mode].slice(-MAX_PURGED);
+}
+
+// Buang sesi yang sudah dihapus permanen dari data mentah (data.json). Klasemen liga dikurangi poin
+// sesi yang dibuang. Mengembalikan daftar mode yang berubah.
+function purgeData(d, ov) {
+  const changed = [];
+  for (const m of MODES) {
+    const md = d.modes[m];
+    const keys = new Set((ov.purged[m] || []).map((e) => Number(e.k)).filter((k) => k > 0));
+    const keep = [], gone = [];
+    for (const s of md.sessions) (keys.has(stampKey(s)) ? gone : keep).push(s);
+    let ubah = gone.length > 0;
+    md.sessions = keep;
+    if (m === "liga" && Array.isArray(md.ligaLeaderboard)) {
+      if (int(ov.lbClearedAt) > 0 && int(md.updatedAt) < int(ov.lbClearedAt)) {
+        if (md.ligaLeaderboard.length) { md.ligaLeaderboard = []; ubah = true; }
+      } else if (gone.length) {
+        const minus = {};
+        for (const s of gone) {
+          for (const l of Array.isArray(s.ligaPoints) ? s.ligaPoints : []) {
+            const u = String(int(l && l.userId));
+            const x = minus[u] || (minus[u] = { p: 0, c: 0 });
+            x.p += num(l.points); x.c += 1;
+          }
+        }
+        md.ligaLeaderboard = md.ligaLeaderboard
+          .map((e) => {
+            const x = minus[String(e.userId)];
+            if (!x) return e;
+            const r = { ...e, totalPoints: num(e.totalPoints) - x.p };
+            if (e.sessionCount != null) r.sessionCount = Math.max(0, int(e.sessionCount) - x.c);
+            return r;
+          })
+          .filter((e) => !(minus[String(e.userId)] && num(e.totalPoints) <= 0 && (e.sessionCount == null || int(e.sessionCount) <= 0)))
+          .sort((a, b) => num(b.totalPoints) - num(a.totalPoints));
+      }
+    }
+    if (ubah) changed.push(m);
+  }
+  return changed;
+}
+
+// Opsional: tulis data.json yang sudah dibersihkan langsung ke GitHub (butuh secret GITHUB_TOKEN).
+const b64Bytes = (u8) => { let bin = ""; for (let i = 0; i < u8.length; i += 0x8000) bin += String.fromCharCode(...u8.subarray(i, i + 0x8000)); return btoa(bin); };
+async function commitPurge(env, ov, user) {
+  if (!env.GITHUB_TOKEN) return { ok: true, github: "off" };
+  const repo = env.GITHUB_REPO || "rawend297-png/vigib-race";
+  const branch = env.GITHUB_BRANCH || "main";
+  const url = `https://api.github.com/repos/${repo}/contents/data.json`;
+  const headers = {
+    authorization: "Bearer " + env.GITHUB_TOKEN, accept: "application/vnd.github+json",
+    "x-github-api-version": "2022-11-28", "user-agent": "vigib-race-worker", "content-type": "application/json",
+  };
+  for (let attempt = 1; attempt <= 3; attempt++) {
+    const g = await fetch(url + "?ref=" + encodeURIComponent(branch), { headers });
+    if (g.status === 404) return { ok: true, github: "ok" };
+    if (!g.ok) return { ok: false, github: "GitHub " + g.status + " saat membaca data.json" };
+    const meta = await g.json();
+    let d;
+    try { d = normalizeData(JSON.parse(new TextDecoder().decode(unb64(String(meta.content || "").replace(/\s/g, ""))))); }
+    catch { return { ok: false, github: "data.json di GitHub tidak bisa dibaca" }; }
+    const changed = purgeData(d, ov);
+    if (!changed.length) return { ok: true, github: "ok" };
+    const now = Date.now();
+    for (const m of changed) d.modes[m].updatedAt = now;
+    d.updatedAt = now;
+    const p = await fetch(url, {
+      method: "PUT", headers,
+      body: JSON.stringify({
+        message: `Admin ${user}: hapus permanen sesi (${changed.join(", ")})`,
+        content: b64Bytes(new TextEncoder().encode(JSON.stringify(d))), sha: meta.sha, branch,
+      }),
+    });
+    if (p.ok) return { ok: true, github: "ok" };
+    if (p.status !== 409 && p.status !== 422) return { ok: false, github: "GitHub " + p.status + " saat menyimpan data.json" };
+    await new Promise((r) => setTimeout(r, 800 * attempt));
+  }
+  return { ok: false, github: "bentrok saat menyimpan data.json, coba lagi" };
 }
 
 function findConflicts(raw, ov) {
@@ -150,6 +261,12 @@ function reservedNumbers(ov) {
     ].filter((n) => Number.isFinite(n) && n > 0));
     out[m] = [...set].sort((a, b) => a - b);
   }
+  return out;
+}
+// daftar hapus permanen untuk server Roblox (VigibWebsite.fetchReserved)
+function purgedList(ov) {
+  const out = {};
+  for (const m of MODES) out[m] = (ov.purged[m] || []).map((e) => ({ k: Number(e.k) || 0, b: int(e.b), sig: str(e.sig, 4000) }));
   return out;
 }
 
@@ -282,6 +399,7 @@ function normalizeData(d) {
 }
 
 function applyOverlay(d, ov) {
+  purgeData(d, ov); // sesi yang dihapus permanen tidak pernah tampil lagi
   for (const m of MODES) {
     const md = d.modes[m];
     const del = new Set((ov.deleted[m] || []).map(Number));
@@ -346,6 +464,7 @@ async function adminAction(path, request, env, user) {
   const body = await readJson(request);
   const mode = MODES.includes(body.mode) ? body.mode : null;
   let detail = "";
+  let purge = false;
 
   switch (path) {
     case "/api/admin/session/save": {
@@ -391,11 +510,46 @@ async function adminAction(path, request, env, user) {
       break;
     }
     case "/api/admin/session/delete": {
+      // HAPUS PERMANEN satu sesi. Sesi dari game dicatat lewat timestamp-nya (tombstone), sesi buatan admin dibuang.
       if (!mode) throw new HttpError("Mode tidak dikenal");
       const n = int(body.sessionNumber);
       if (n <= 0) throw new HttpError("Nomor sesi tidak valid");
-      if (!ov.deleted[mode].includes(n)) ov.deleted[mode].push(n);
-      detail = `hapus sesi ${mode} #${n}`;
+      const raw = normalizeData(await staticData(request, env));
+      purgeData(raw, ov);
+      const s = raw.modes[mode].sessions.find((x) => int(x.sessionNumber) === n);
+      if (s && stampKey(s) > 0) {
+        addPurged(ov, mode, [tombstone(s, user.username)]);
+        ov.deleted[mode] = ov.deleted[mode].filter((x) => Number(x) !== n);
+      } else if (s) {
+        if (!ov.deleted[mode].includes(n)) ov.deleted[mode].push(n); // sesi lama tanpa timestamp: disembunyikan lewat nomor
+      } else if (!ov.edits[mode][n]) {
+        throw new HttpError(`Sesi #${n} tidak ditemukan`, 404);
+      }
+      delete ov.edits[mode][n];
+      ov.added[mode] = ov.added[mode].filter((x) => Number(x) !== n);
+      purge = true;
+      detail = `hapus permanen sesi ${mode} #${n}`;
+      break;
+    }
+    case "/api/admin/session/deleteAll": {
+      // HAPUS SEMUA sesi (mode ini, atau semua mode kalau body.all === true). Permanen.
+      const targets = body.all === true ? MODES : mode ? [mode] : null;
+      if (!targets) throw new HttpError("Mode tidak dikenal");
+      const raw = normalizeData(await staticData(request, env));
+      purgeData(raw, ov);
+      let total = 0;
+      for (const m of targets) {
+        const list = raw.modes[m].sessions;
+        addPurged(ov, m, list.filter((s) => stampKey(s) > 0).map((s) => tombstone(s, user.username)));
+        for (const s of list) if (stampKey(s) <= 0 && !ov.deleted[m].includes(int(s.sessionNumber))) ov.deleted[m].push(int(s.sessionNumber));
+        total += list.length + Object.keys(ov.edits[m]).filter((x) => !list.some((s) => int(s.sessionNumber) === Number(x))).length;
+        ov.edits[m] = {};
+        ov.added[m] = [];
+        ov.maxNum[m] = 0;
+        if (m === "liga") { ov.lbEdits.liga = {}; ov.lbDeleted.liga = []; ov.lbClearedAt = Date.now(); }
+      }
+      purge = true;
+      detail = `hapus semua sesi ${targets.join(", ")} (${total} sesi)`;
       break;
     }
     case "/api/admin/session/restore": {
@@ -435,6 +589,13 @@ async function adminAction(path, request, env, user) {
   }
   await kvPut(env, "overlay", ov);
   await addLog(env, user.username, "data", detail);
+  if (purge) {
+    // data.json ikut dibersihkan (kalau GITHUB_TOKEN ada). Gagal di sini tidak membatalkan hapus:
+    // sesi sudah hilang dari website dan akan dibuang dari data.json saat server game mengirim Book berikutnya.
+    let gh;
+    try { gh = await commitPurge(env, ov, user.username); } catch (e) { gh = { ok: false, github: String(e && e.message || e) }; }
+    return json({ ok: true, overlay: ov, github: gh.github, githubOk: gh.ok });
+  }
   return json({ ok: true, overlay: ov });
 }
 
@@ -530,8 +691,9 @@ async function handleApi(request, env, url) {
     return json(d);
   }
   if (p === "/api/reserved" && m === "GET") {
-    if (!env.RACE_KV) return json({ ok: true, reserved: { liga: [], normal: [], team: [] } });
-    return json({ ok: true, reserved: reservedNumbers(await getOverlay(env)) });
+    if (!env.RACE_KV) return json({ ok: true, reserved: { liga: [], normal: [], team: [] }, purged: { liga: [], normal: [], team: [] } });
+    const ov = await getOverlay(env);
+    return json({ ok: true, reserved: reservedNumbers(ov), purged: purgedList(ov) });
   }
   if (!env.RACE_KV) return err("KV RACE_KV belum dipasang di Cloudflare Pages", 503);
 
@@ -560,7 +722,8 @@ async function handleApi(request, env, url) {
   if (p === "/api/admin/state" && m === "GET") {
     const raw = normalizeData(await staticData(request, env));
     const ov = await getOverlay(env);
-    return json({ ok: true, raw, overlay: ov, conflicts: findConflicts(raw, ov) });
+    purgeData(raw, ov); // sesi yang sudah dihapus permanen tidak ditampilkan lagi di panel
+    return json({ ok: true, raw, overlay: ov, conflicts: findConflicts(raw, ov), githubSync: !!env.GITHUB_TOKEN });
   }
   if (p === "/api/admin/log" && m === "GET") return json({ ok: true, log: (await kvJson(env, "log", [])) || [] });
   if (p.startsWith("/api/admin/") && m === "POST") return adminAction(p, request, env, user);

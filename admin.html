@@ -299,7 +299,7 @@ function vigibExcelName() {
 
 async function loadState() {
   const j = await api("/api/admin/state");
-  S.raw = j.raw; S.ov = j.overlay; S.conflicts = Array.isArray(j.conflicts) ? j.conflicts : [];
+  S.raw = j.raw; S.ov = j.overlay; S.conflicts = Array.isArray(j.conflicts) ? j.conflicts : []; S.githubSync = !!j.githubSync;
 }
 async function loadAccounts() {
   S.accounts = (await api("/api/super/accounts")).accounts;
@@ -441,8 +441,8 @@ function sesiBody() {
              <button class="btn sm danger" data-act="${added ? "deladded" : "del"}" data-n="${cur.sessionNumber}">${ico("trash")} Hapus</button>`}
       </div></div>`;
   }).join("");
-  return `<div class="bar"><h2>Data Sesi</h2><div style="display:flex;gap:8px;flex-wrap:wrap">${segModes()}<button class="btn sm gold" data-act="newsess">${ico("plus")} Tambah Sesi</button><button class="btn sm" data-act="reload">${ico("refresh")} Muat ulang</button></div></div>
-    <p class="muted" style="margin:-6px 0 14px;font-size:12.5px">Perubahan tampil di website saat itu juga. Data asli dari game tetap disimpan, jadi edit dan hapus bisa dibatalkan kapan saja.</p>
+  return `<div class="bar"><h2>Data Sesi</h2><div style="display:flex;gap:8px;flex-wrap:wrap">${segModes()}<button class="btn sm gold" data-act="newsess">${ico("plus")} Tambah Sesi</button><button class="btn sm" data-act="reload">${ico("refresh")} Muat ulang</button><button class="btn sm danger" data-act="delall">${ico("trash")} Hapus Semua</button></div></div>
+    <p class="muted" style="margin:-6px 0 14px;font-size:12.5px">Perubahan tampil di website saat itu juga. Edit bisa dibatalkan, tapi <b>hapus bersifat permanen</b>: sesi yang dihapus tidak akan muncul lagi walau Book dikirim ulang dari game.</p>
     ${banner}
     <div class="list">${items || `<div class="empty">Belum ada sesi ${MODES[S.mode]}.</div>`}</div>`;
 }
@@ -699,6 +699,40 @@ function bindMain() {
   app.querySelectorAll("[data-mode]").forEach((b) => b.addEventListener("click", () => { S.mode = b.dataset.mode; render(); }));
   app.querySelectorAll("[data-act]").forEach((b) => b.addEventListener("click", () => onAct(b)));
 }
+// hapus permanen: muat ulang data dari server (sesi yang dihapus disaring di server)
+function purgePost(path, body, msg) {
+  return run(async () => {
+    const j = await api(path, body);
+    if (j.overlay) S.ov = j.overlay;
+    await loadState();
+    render();
+    if (j.githubOk === false) setTimeout(() => toast("Sudah terhapus di website. data.json belum ikut dibersihkan (" + j.github + "), akan dibersihkan saat game mengirim Book berikutnya.", "err"), 400);
+  }, msg);
+}
+function deleteAllForm() {
+  const count = (m) => sessionsView(m).filter((x) => !x.deleted).length;
+  openModal(`<h3>Hapus Semua Sesi</h3>
+    <p class="muted" style="margin:0">Semua sesi yang dipilih dihapus <b>permanen</b> dari website dan tidak akan muncul lagi walau Book dikirim ulang dari game. Sesi baru yang selesai setelah ini tetap masuk seperti biasa.</p>
+    <div class="col" style="display:flex;flex-direction:column;gap:8px;margin:12px 0">
+      <label style="display:flex;gap:8px;align-items:center;cursor:pointer"><input type="radio" name="scope" value="mode" checked> Hanya mode ${esc(MODES[S.mode])} (${count(S.mode)} sesi${S.mode === "liga" ? " + klasemen liga" : ""})</label>
+      <label style="display:flex;gap:8px;align-items:center;cursor:pointer"><input type="radio" name="scope" value="all"> Semua mode (${Object.keys(MODES).map((m) => `${MODES[m]} ${count(m)}`).join(" · ")} sesi + klasemen liga)</label>
+    </div>
+    <div><label class="lb" for="delConfirm">Ketik <b>HAPUS</b> untuk konfirmasi</label><input class="in" id="delConfirm" autocomplete="off" maxlength="10"></div>
+    <div class="foot" style="margin-top:14px"><button class="btn" data-close>Batal</button><button class="btn danger" id="delAllOk" disabled>Hapus Semua</button></div>`,
+    (m) => {
+      const inp = $("#delConfirm", m), ok = $("#delAllOk", m);
+      inp.addEventListener("input", () => { ok.disabled = inp.value.trim().toUpperCase() !== "HAPUS"; });
+      ok.addEventListener("click", () => {
+        if (ok.disabled) return;
+        const all = m.querySelector('input[name="scope"]:checked').value === "all";
+        closeModal();
+        purgePost("/api/admin/session/deleteAll", all ? { all: true } : { mode: S.mode },
+          all ? "Semua sesi di semua mode dihapus permanen" : `Semua sesi ${MODES[S.mode]} dihapus permanen`);
+      });
+      setTimeout(() => inp.focus(), 30);
+    }, "sm");
+}
+
 async function onAct(b) {
   const a = b.dataset.act, n = b.dataset.n, u = b.dataset.u;
   const tr = b.closest("tr");
@@ -723,9 +757,10 @@ async function onAct(b) {
     case "newlb": lbAddForm(); break;
     case "excel": run(downloadExcel, "File Excel diunduh"); break;
     case "del":
-      if (await confirmBox(`Hapus sesi #${n}?`, "Sesi ini akan disembunyikan dari website. Bisa dipulihkan kembali dari panel ini.", "Hapus", true))
-        post("/api/admin/session/delete", { mode: S.mode, sessionNumber: Number(n) }, `Sesi #${n} dihapus`);
+      if (await confirmBox(`Hapus permanen sesi #${n}?`, "Sesi ini dihapus dari website untuk selamanya dan tidak akan muncul lagi walau Book dikirim ulang dari game. Tidak bisa dibatalkan.", "Hapus Permanen", true))
+        purgePost("/api/admin/session/delete", { mode: S.mode, sessionNumber: Number(n) }, `Sesi #${n} dihapus permanen`);
       break;
+    case "delall": deleteAllForm(); break;
     case "restore": post("/api/admin/session/restore", { mode: S.mode, sessionNumber: Number(n) }, `Sesi #${n} dipulihkan`); break;
     case "revert":
       if (await confirmBox(`Batalkan edit sesi #${n}?`, "Sesi kembali ke data asli dari game.", "Batalkan Edit"))
