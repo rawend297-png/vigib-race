@@ -83,6 +83,10 @@ header.panel{padding:16px 20px;display:flex;align-items:center;justify-content:s
 .tag{font-size:10px;font-weight:800;letter-spacing:.1em;padding:2px 7px;border-radius:5px;text-transform:uppercase}
 .tag.ed{background:rgba(143,184,216,.15);color:var(--sky)}
 .tag.del{background:rgba(229,138,122,.15);color:var(--rose)}
+.tag.warn{background:rgba(226,186,112,.18);color:var(--gold)}
+.warnbox{margin:0 0 14px;padding:12px 14px;border-radius:12px;border:1px solid rgba(226,186,112,.45);background:rgba(226,186,112,.08);font-size:12.5px;line-height:1.5}
+.warnbox b{color:var(--gold)}
+.warnbox ul{margin:6px 0 0;padding-left:18px}
 .acts{display:flex;gap:6px;flex-wrap:wrap}
 .empty{padding:40px 10px;text-align:center;color:var(--muted)}
 table{width:100%;border-collapse:collapse}
@@ -300,7 +304,7 @@ function vigibExcelName() {
 // ---------- data ----------
 async function loadState() {
   const j = await api("/api/admin/state");
-  S.raw = j.raw; S.ov = j.overlay;
+  S.raw = j.raw; S.ov = j.overlay; S.conflicts = Array.isArray(j.conflicts) ? j.conflicts : [];
 }
 async function loadAccounts() {
   S.accounts = (await api("/api/super/accounts")).accounts;
@@ -425,10 +429,15 @@ const segModes = () => `<div class="seg">${Object.entries(MODES).map(([k, l]) =>
 function sesiBody() {
   if (!S.raw) return `<div class="empty">Memuat…</div>`;
   const list = sessionsView(S.mode);
+  const konflik = S.conflicts || [];
+  const bentrok = new Set(konflik.filter((c) => c.mode === S.mode).map((c) => Number(c.sessionNumber)));
+  const banner = konflik.length
+    ? `<div class="warnbox"><b>Bentrok nomor sesi (${konflik.length})</b><br>Sesi buatan admin di bawah memakai nomor yang kini juga dipakai sesi asli dari game. Website menampilkan sesi dari game, bukan versi admin. Salin data yang masih dibutuhkan lewat <b>Tambah Sesi</b>, lalu klik <b>Batalkan Edit</b> pada sesi bentrok.<ul>${konflik.map((c) => `<li>${esc(MODES[c.mode] || c.mode)} · Sesi #${Number(c.sessionNumber)}</li>`).join("")}</ul></div>`
+    : "";
   const items = list.map(({ cur, edited, deleted, added }) => {
     const champs = (cur.champions || []).slice().sort((a, b) => a.rank - b.rank).slice(0, 3).map((c) => `${c.rank}. ${esc(c.displayName)}`).join(" · ");
     return `<div class="item ${deleted ? "deleted" : ""}">
-      <div><div class="t">Sesi #${cur.sessionNumber} ${added ? `<span class="tag ed">Ditambah admin</span>` : ""} ${edited ? `<span class="tag ed">Diedit</span>` : ""} ${deleted ? `<span class="tag del">Dihapus</span>` : ""}</div>
+      <div><div class="t">Sesi #${cur.sessionNumber} ${added ? `<span class="tag ed">Ditambah admin</span>` : ""} ${bentrok.has(Number(cur.sessionNumber)) ? `<span class="tag warn">Bentrok</span>` : ""} ${edited ? `<span class="tag ed">Diedit</span>` : ""} ${deleted ? `<span class="tag del">Dihapus</span>` : ""}</div>
         <div class="s">${fmtDate(cur.timestamp)} · ${(cur.participants || []).length} peserta${champs ? " · " + champs : ""}</div></div>
       <div class="acts">
         ${deleted ? `<button class="btn sm" data-act="restore" data-n="${cur.sessionNumber}">${ico("undo")} Pulihkan</button>`
@@ -439,6 +448,7 @@ function sesiBody() {
   }).join("");
   return `<div class="bar"><h2>Data Sesi</h2><div style="display:flex;gap:8px;flex-wrap:wrap">${segModes()}<button class="btn sm gold" data-act="newsess">${ico("plus")} Tambah Sesi</button><button class="btn sm" data-act="reload">${ico("refresh")} Muat ulang</button></div></div>
     <p class="muted" style="margin:-6px 0 14px;font-size:12.5px">Perubahan tampil di website saat itu juga. Data asli dari game tetap disimpan, jadi edit dan hapus bisa dibatalkan kapan saja.</p>
+    ${banner}
     <div class="list">${items || `<div class="empty">Belum ada sesi ${MODES[S.mode]}.</div>`}</div>`;
 }
 
@@ -575,7 +585,7 @@ function editSession(n, baru) {
       if (dv) { const t = new Date(dv).getTime(); if (!isNaN(t)) out.timestamp = Math.floor(t / 1000); }
       ["champions", "ligaPoints", "teamData", "participants"].forEach((k) => { const r = read(k); if (r !== undefined) out[k] = r; });
       run(async () => {
-        const j = await api("/api/admin/session/save", { mode: S.mode, session: out });
+        const j = await api("/api/admin/session/save", { mode: S.mode, session: out, isNew: !!baru });
         S.ov = j.overlay; closeModal(); render();
       }, `Sesi #${s.sessionNumber} ${baru ? "ditambahkan" : "disimpan"}`);
     });
@@ -697,7 +707,8 @@ async function onAct(b) {
     case "newsess": {
       const all = sessionsView(S.mode).map((x) => Number(x.cur.sessionNumber));
       const deletedNums = (S.ov.deleted[S.mode] || []).map(Number);
-      editSession(Math.max(0, ...all, ...deletedNums) + 1, true);
+      const maxPernah = Number(((S.ov.maxNum || {})[S.mode]) || 0); // nomor tertinggi yang pernah dipakai (sama dengan aturan server)
+      editSession(Math.max(0, ...all, ...deletedNums, maxPernah) + 1, true);
       break;
     }
     case "deladded":

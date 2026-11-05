@@ -112,13 +112,50 @@ async function addLog(env, user, action, detail) {
 }
 
 function emptyOverlay() {
-  return { deleted: { liga: [], normal: [], team: [] }, edits: { liga: {}, normal: {}, team: {} }, lbEdits: { liga: {} }, lbDeleted: { liga: [] } };
+  return {
+    deleted: { liga: [], normal: [], team: [] },
+    edits: { liga: {}, normal: {}, team: {} },
+    lbEdits: { liga: {} },
+    lbDeleted: { liga: [] },
+    // nomor sesi yang dibuat lewat panel admin (dilindungi dari bentrok dengan sesi game)
+    added: { liga: [], normal: [], team: [] },
+    // nomor sesi tertinggi yang pernah dipakai per mode (tidak turun walau sesi dihapus)
+    maxNum: { liga: 0, normal: 0, team: 0 },
+  };
 }
 async function getOverlay(env) {
   const ov = (await kvJson(env, "overlay")) || emptyOverlay();
   const base = emptyOverlay();
   for (const k of Object.keys(base)) ov[k] = Object.assign(base[k], ov[k] || {});
   return ov;
+}
+
+// Sesi buatan admin yang nomornya kini juga dipakai sesi asli dari game
+function findConflicts(raw, ov) {
+  const out = [];
+  for (const m of MODES) {
+    const ada = new Set(raw.modes[m].sessions.map((s) => Number(s.sessionNumber)));
+    for (const n of ov.added[m] || []) {
+      if (ada.has(Number(n)) && ov.edits[m][n]) out.push({ mode: m, sessionNumber: Number(n) });
+    }
+  }
+  return out;
+}
+
+// Nomor sesi yang "dipegang" panel admin (hasil edit, dihapus, buatan admin, dan nomor tertinggi yang pernah dipakai).
+// Dibaca server Roblox (VigibWebsite) lewat GET /api/reserved supaya sesi dari Book tidak mendarat di nomor ini.
+function reservedNumbers(ov) {
+  const out = {};
+  for (const m of MODES) {
+    const set = new Set([
+      ...Object.keys(ov.edits[m] || {}).map(Number),
+      ...(ov.deleted[m] || []).map(Number),
+      ...(ov.added[m] || []).map(Number),
+      Number((ov.maxNum && ov.maxNum[m]) || 0),
+    ].filter((n) => Number.isFinite(n) && n > 0));
+    out[m] = [...set].sort((a, b) => a - b);
+  }
+  return out;
 }
 
 // ---------- kode akses panel (gerbang sebelum login) ----------
@@ -254,10 +291,12 @@ function applyOverlay(d, ov) {
     const md = d.modes[m];
     const del = new Set((ov.deleted[m] || []).map(Number));
     const ed = ov.edits[m] || {};
+    const added = new Set((ov.added[m] || []).map(Number));
     const ada = new Set(md.sessions.map((s) => Number(s.sessionNumber)));
     const tambahan = Object.keys(ed).map(Number).filter((n) => !ada.has(n)).map((n) => ({ ...ed[n], addedByAdmin: true }));
     md.sessions = md.sessions
-      .map((s) => (ed[s.sessionNumber] ? ed[s.sessionNumber] : s))
+      // sesi asli dari game yang nomornya sama dengan sesi buatan admin tidak ditimpa
+      .map((s) => (ed[s.sessionNumber] && !added.has(Number(s.sessionNumber)) ? ed[s.sessionNumber] : s))
       .concat(tambahan)
       .filter((s) => !del.has(Number(s.sessionNumber)))
       .sort((a, b) => b.sessionNumber - a.sessionNumber);
@@ -314,23 +353,31 @@ async function adminAction(path, request, env, user) {
     case "/api/admin/session/save": {
       if (!mode) throw new HttpError("Mode tidak dikenal");
 
-      // Ambil data gabungan saat ini untuk mendeteksi nomor sesi tertinggi
-      const currentData = normalizeData(await staticData(request, env));
-      applyOverlay(currentData, ov);
-      const existingSessions = currentData.modes[mode].sessions || [];
-
-      let n = int(body.session && body.session.sessionNumber);
-      
-      // Jika penambahan sesi baru (isNew) atau sessionNumber <= 0, hitung max + 1
-      if (body.isNew || n <= 0) {
-        const maxN = existingSessions.reduce((max, s) => Math.max(max, int(s.sessionNumber)), 0);
-        n = maxN + 1;
-      }
-
+      const raw = normalizeData(await staticData(request, env));
+      const rawNums = raw.modes[mode].sessions.map((s) => int(s.sessionNumber));
       const sessionToSave = body.session || {};
-      if (!sessionToSave.timestamp) {
-        sessionToSave.timestamp = Date.now();
+      let n = int(sessionToSave.sessionNumber);
+
+      if (body.isNew || n <= 0) {
+        // Nomor baru = di atas SEMUA nomor yang pernah ada, termasuk yang sudah dihapus,
+        // supaya nomor sesi terhapus tidak dipakai ulang dan tidak langsung "hilang".
+        const terpakai = [
+          ...rawNums,
+          ...Object.keys(ov.edits[mode]).map(Number),
+          ...ov.deleted[mode].map(Number),
+          int(ov.maxNum[mode]),
+        ];
+        n = Math.max(0, ...terpakai) + 1;
+        ov.maxNum[mode] = n;
+        if (!ov.added[mode].includes(n)) ov.added[mode].push(n);
+      } else {
+        // Edit hanya untuk sesi yang memang ada dan tidak sedang dihapus.
+        const ada = rawNums.includes(n) || String(n) in ov.edits[mode];
+        if (!ada) throw new HttpError(`Sesi #${n} tidak ditemukan. Gunakan "tambah sesi baru".`, 404);
+        if (ov.deleted[mode].map(Number).includes(n)) throw new HttpError(`Sesi #${n} sedang dihapus. Pulihkan dulu.`, 409);
       }
+
+      if (!sessionToSave.timestamp) sessionToSave.timestamp = Date.now();
 
       ov.edits[mode][n] = cleanSession(sessionToSave, mode, n);
       detail = `simpan sesi ${mode} #${n}`;
@@ -340,6 +387,8 @@ async function adminAction(path, request, env, user) {
       if (!mode) throw new HttpError("Mode tidak dikenal");
       const n = int(body.sessionNumber);
       delete ov.edits[mode][n];
+      // sesi buatan admin yang dibatalkan: lepas dari daftar added (maxNum tetap, nomor tidak dipakai ulang)
+      ov.added[mode] = ov.added[mode].filter((x) => Number(x) !== n);
       detail = `batalkan edit ${mode} #${n}`;
       break;
     }
@@ -482,6 +531,10 @@ async function handleApi(request, env, url) {
     if (env.RACE_KV) applyOverlay(d, await getOverlay(env));
     return json(d);
   }
+  if (p === "/api/reserved" && m === "GET") {
+    if (!env.RACE_KV) return json({ ok: true, reserved: { liga: [], normal: [], team: [] } });
+    return json({ ok: true, reserved: reservedNumbers(await getOverlay(env)) });
+  }
   if (!env.RACE_KV) return err("KV RACE_KV belum dipasang di Cloudflare Pages", 503);
 
   if (m !== "GET") {
@@ -508,7 +561,8 @@ async function handleApi(request, env, url) {
   if (p === "/api/password" && m === "POST") return changeOwnPassword(request, env, user);
   if (p === "/api/admin/state" && m === "GET") {
     const raw = normalizeData(await staticData(request, env));
-    return json({ ok: true, raw, overlay: await getOverlay(env) });
+    const ov = await getOverlay(env);
+    return json({ ok: true, raw, overlay: ov, conflicts: findConflicts(raw, ov) });
   }
   if (p === "/api/admin/log" && m === "GET") return json({ ok: true, log: (await kvJson(env, "log", [])) || [] });
   if (p.startsWith("/api/admin/") && m === "POST") return adminAction(p, request, env, user);
