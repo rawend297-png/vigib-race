@@ -758,12 +758,30 @@ async function handleApi(request, env, url) {
   return err("Tidak ditemukan", 404);
 }
 
+// (2026-11-14) Cek apakah aevora-race.pages.dev sudah aktif sebelum mengarahkan alamat lama ke sana.
+let cekSitusBaru = { t: 0, ok: false };
+async function situsBaruHidup() {
+  const now = Date.now();
+  if (now - cekSitusBaru.t < 5 * 60 * 1000) return cekSitusBaru.ok;
+  let ok = false;
+  try {
+    const ctl = new AbortController();
+    const tm = setTimeout(() => ctl.abort(), 2000);
+    const r = await fetch("https://aevora-race.pages.dev/api/health", { signal: ctl.signal, cf: { cacheTtl: 0 } });
+    clearTimeout(tm);
+    ok = r.ok && ((await r.json().catch(() => ({}))).ok === true);
+  } catch { ok = false; }
+  cekSitusBaru = { t: now, ok };
+  return ok;
+}
+
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
     // (2026-11-14) Alamat lama vigib-race.pages.dev pindah ke aevora-race.pages.dev.
     // Halaman diarahkan permanen; /api/ tetap dilayani di alamat lama agar server game versi lama tidak putus.
-    if (url.hostname === "vigib-race.pages.dev" && !url.pathname.startsWith("/api/")) {
+    // Pengarahan hanya aktif kalau situs baru sudah hidup (dicek lewat /api/health, hasil disimpan 5 menit).
+    if (url.hostname === "vigib-race.pages.dev" && !url.pathname.startsWith("/api/") && (await situsBaruHidup())) {
       return Response.redirect("https://aevora-race.pages.dev" + url.pathname + url.search, 301);
     }
     if (url.pathname.startsWith("/api/")) {
