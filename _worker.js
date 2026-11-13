@@ -1,4 +1,4 @@
-// AEVORA RACE (dulu VIGIB RACE) — Cloudflare Pages (_worker.js, advanced mode)
+// AEVORA RACE (dulu VIGIB RACE) — Cloudflare Pages project "aevora-race" (aevora-race.pages.dev), _worker.js advanced mode
 // - Halaman statis (index.html, admin.html, data.json, logo) dilayani dari env.ASSETS.
 // - data.json ditulis oleh server Roblox ke repo GitHub.
 // - Panel admin: perubahan admin (edit / hapus) disimpan sebagai "overlay" di KV
