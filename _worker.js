@@ -1,4 +1,4 @@
-// VIGIB RACE — Cloudflare Pages (_worker.js, advanced mode)
+// AEVORA RACE (dulu VIGIB RACE) — Cloudflare Pages (_worker.js, advanced mode)
 // - Halaman statis (index.html, admin.html, data.json, logo) dilayani dari env.ASSETS.
 // - data.json ditulis oleh server Roblox ke repo GitHub.
 // - Panel admin: perubahan admin (edit / hapus) disimpan sebagai "overlay" di KV
@@ -323,24 +323,27 @@ async function handleGate(request, env) {
 const validGateCode = (c) => typeof c === "string" && c.length >= 6 && c.length <= 64;
 
 const GATE_PAGE = `<!DOCTYPE html><html lang="id"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="robots" content="noindex, nofollow"><title>Kode Akses · VIGIB Race</title><link rel="icon" type="image/png" href="logo-vg.png">
+<meta name="robots" content="noindex, nofollow"><title>Kode Akses · AEVORA Race</title><link rel="icon" type="image/png" href="favicon-aevora.png">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;600;700&family=Cinzel:wght@700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="aevora.css?v=4">
 <style>
 *{box-sizing:border-box}html,body{margin:0}
-body{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;background:#100d0a;color:#faf3e4;font-family:system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;
-background-image:radial-gradient(circle at 12% 8%,rgba(226,186,112,.10) 0%,transparent 38%),radial-gradient(circle at 88% 92%,rgba(150,108,48,.12) 0%,transparent 42%)}
-.c{width:100%;max-width:380px;padding:30px 26px;border-radius:16px;border:1px solid rgba(226,186,112,.18);background:linear-gradient(180deg,rgba(46,39,29,.82),rgba(34,29,23,.86));text-align:center;display:flex;flex-direction:column;gap:14px}
-img{width:76px;height:76px;margin:0 auto;filter:drop-shadow(0 0 18px rgba(226,186,112,.35))}
-h1{margin:0;font-family:Georgia,serif;letter-spacing:.06em;font-size:22px;background:linear-gradient(180deg,#ffecc4,#e2ba70 55%,#966c30);-webkit-background-clip:text;background-clip:text;color:transparent}
-p{margin:0;color:#b0a696;font-size:13px}
-input{width:100%;padding:11px 12px;border-radius:9px;border:1px solid rgba(88,72,50,.9);background:rgba(11,9,7,.75);color:#faf3e4;font-size:15px;text-align:center;letter-spacing:.12em;outline:none}
-input:focus{border-color:#e2ba70;box-shadow:0 0 0 3px rgba(226,186,112,.15)}
-button{padding:11px;border-radius:9px;border:0;background:linear-gradient(180deg,#ffecc4,#e2ba70);color:#1c160e;font-weight:700;font-size:14px;cursor:pointer}
+body{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;background:#070605;color:#f6eedc;font-family:'Montserrat',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif}
+.c{position:relative;z-index:2;width:100%;max-width:380px;padding:30px 26px;border-radius:16px;border:1px solid rgba(232,190,92,.55);background:linear-gradient(180deg,rgba(16,14,12,.86),rgba(10,9,8,.84));backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);box-shadow:0 24px 70px rgba(0,0,0,.55),0 0 28px rgba(232,190,92,.08);text-align:center;display:flex;flex-direction:column;gap:14px}
+img{width:84px;height:84px;margin:0 auto;filter:drop-shadow(0 0 22px rgba(232,190,92,.45))}
+h1{margin:0;font-family:'Cinzel',Georgia,serif;letter-spacing:.06em;font-size:24px;background:linear-gradient(180deg,#ffecaa 0%,#ecbe58 45%,#c48c30 55%,#ffdc82 100%);-webkit-background-clip:text;background-clip:text;color:transparent}
+p{margin:0;color:#b0a692;font-size:13px}
+input{width:100%;padding:11px 12px;border-radius:10px;border:1px solid rgba(232,190,92,.22);background:rgba(5,4,4,.75);color:#f6eedc;font-size:15px;text-align:center;letter-spacing:.12em;outline:none;font-family:inherit}
+input:focus{border-color:#e8be5c;box-shadow:0 0 0 3px rgba(232,190,92,.12)}
+button{padding:11px;border-radius:10px;border:0;background:linear-gradient(180deg,#ffe8a6 0%,#e8be5c 60%,#c8933c 100%);color:#261a0a;font-weight:700;font-size:14px;cursor:pointer;font-family:inherit;box-shadow:0 4px 16px rgba(232,190,92,.22)}
 button:disabled{opacity:.6}
-.e{padding:9px 12px;border-radius:9px;font-size:13px;background:rgba(229,138,122,.1);border:1px solid rgba(229,138,122,.35);color:#e58a7a;display:none}
-a{color:#b0a696;font-size:12px;text-decoration:none}
+.e{padding:9px 12px;border-radius:9px;font-size:13px;background:rgba(232,138,122,.1);border:1px solid rgba(232,138,122,.35);color:#e88a7a;display:none}
+a{color:#b0a692;font-size:12px;text-decoration:none}a:hover{color:#e8be5c}
 </style></head><body>
+<script src="aevora.js?v=4"></script>
 <form class="c" id="f" autocomplete="off">
-<img src="logo-vg.png" alt="VG"><h1>PANEL ADMIN</h1><p>Masukkan kode akses khusus untuk membuka panel.</p>
+<img src="logo-aevora.png" alt="AEVORA"><h1>PANEL ADMIN</h1><p>Masukkan kode akses khusus untuk membuka panel.</p>
 <div class="e" id="e"></div>
 <input id="k" type="password" placeholder="Kode akses" maxlength="64" required autofocus>
 <button id="b" type="submit">Buka Panel</button>
