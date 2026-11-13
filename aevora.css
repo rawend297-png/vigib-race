@@ -37,7 +37,7 @@ body{background:var(--base);background-image:none;font-feature-settings:"lnum" 1
   animation:aevNaik linear infinite;opacity:0}
 @keyframes aevNaik{0%{transform:translate3d(0,0,0);opacity:0}10%{opacity:.9}80%{opacity:.6}
   100%{transform:translate3d(var(--dx,20px),-105vh,0);opacity:0}}
-.watermark{z-index:1;opacity:.045;filter:sepia(1) saturate(1.6) brightness(1.1)}
+.watermark{z-index:1;opacity:.05}
 .wrap{z-index:2}
 #confetti{z-index:60}
 @media (prefers-reduced-motion:reduce){

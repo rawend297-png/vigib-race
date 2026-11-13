@@ -4,8 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="robots" content="noindex, nofollow">
-<title>Panel Admin · VIGIB Race</title>
-<link rel="icon" type="image/png" href="logo-vg.png">
+<title>Panel Admin · AEVORA Race</title>
+<link rel="icon" type="image/png" href="favicon-aevora.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&family=Cinzel:wght@600;700;800;900&display=swap" rel="stylesheet">
@@ -143,10 +143,10 @@ input.cell.dt{min-width:190px}
   .toast{left:10px;right:10px;max-width:none}
 }
 </style>
-<link rel="stylesheet" href="aevora.css?v=2">
+<link rel="stylesheet" href="aevora.css?v=3">
 </head>
 <body>
-<script src="aevora.js?v=2"></script>
+<script src="aevora.js?v=3"></script>
 <div class="wrap" id="app"></div>
 <div id="modal"></div>
 <div id="toast"></div>
@@ -363,12 +363,12 @@ function vigibSheets(data, opt = {}) {
     riwayat.push({ name: `Riwayat ${label}`, cols, rows });
   }
   const sheets = [...klasemen, ...riwayat];
-  if (!sheets.length) sheets.push({ name: "VIGIB Race", cols: [{ h: "Info", w: 40 }], rows: [["Belum ada data untuk tabel ini"]] });
+  if (!sheets.length) sheets.push({ name: "AEVORA Race", cols: [{ h: "Info", w: 40 }], rows: [["Belum ada data untuk tabel ini"]] });
   return sheets;
 }
 function vigibExcelName(part) {
   const t = new Date(), p = (n) => String(n).padStart(2, "0");
-  return `VIGIB_Race_${part ? part + "_" : ""}${t.getFullYear()}-${p(t.getMonth() + 1)}-${p(t.getDate())}_${p(t.getHours())}${p(t.getMinutes())}.xlsx`;
+  return `AEVORA_Race_${part ? part + "_" : ""}${t.getFullYear()}-${p(t.getMonth() + 1)}-${p(t.getDate())}_${p(t.getHours())}${p(t.getMinutes())}.xlsx`;
 }
 
 async function loadState() {
@@ -421,7 +421,7 @@ function render() {
     .concat(isSuper ? [["akun", "Akun Admin", "users"]] : []).concat([["log", "Log", "list"]]);
   app.innerHTML = `
   <header class="panel">
-    <div class="brand"><img src="logo-vg.png" alt="VG"><div><h1 class="gold-text">PANEL ADMIN</h1><p>VIGIB Race</p></div></div>
+    <div class="brand"><img src="logo-aevora.png" alt="AEVORA"><div><h1 class="gold-text">PANEL ADMIN</h1><p>AEVORA Race</p></div></div>
     <div class="who">
       <span class="role ${S.user.role}">${S.user.role === "super" ? "Super Admin" : "Admin"}</span>
       <b>${esc(S.user.username)}</b>
@@ -439,8 +439,8 @@ function render() {
 
 function loginView() {
   return `<div class="panel login">
-    <img src="logo-vg.png" alt="VG">
-    <div><h1 class="gold-text">PANEL ADMIN</h1><div class="muted" style="margin-top:4px">VIGIB Race</div></div>
+    <img src="logo-aevora.png" alt="AEVORA">
+    <div><h1 class="gold-text">PANEL ADMIN</h1><div class="muted" style="margin-top:4px">AEVORA Race</div></div>
     ${S.loginErr ? `<div class="msg err">${esc(S.loginErr)}</div>` : ""}
     <form id="loginForm" autocomplete="on">
       <div><label class="lb" for="u">Username</label><input class="in" id="u" name="username" autocomplete="username" required maxlength="20"></div>
@@ -452,7 +452,7 @@ function loginView() {
 }
 function setupView() {
   return `<div class="panel login">
-    <img src="logo-vg.png" alt="VG">
+    <img src="logo-aevora.png" alt="AEVORA">
     <div><h1 class="gold-text">SETUP AWAL</h1><div class="muted" style="margin-top:4px">Buat akun Super Admin (hanya sekali)</div></div>
     ${S.loginErr ? `<div class="msg err">${esc(S.loginErr)}</div>` : ""}
     <form id="setupForm" autocomplete="off">
