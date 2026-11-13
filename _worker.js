@@ -761,6 +761,11 @@ async function handleApi(request, env, url) {
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
+    // (2026-11-14) Alamat lama vigib-race.pages.dev pindah ke aevora-race.pages.dev.
+    // Halaman diarahkan permanen; /api/ tetap dilayani di alamat lama agar server game versi lama tidak putus.
+    if (url.hostname === "vigib-race.pages.dev" && !url.pathname.startsWith("/api/")) {
+      return Response.redirect("https://aevora-race.pages.dev" + url.pathname + url.search, 301);
+    }
     if (url.pathname.startsWith("/api/")) {
       try {
         return await handleApi(request, env, url);
