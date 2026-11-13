@@ -4,15 +4,15 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>VIGIB Race · Klasemen Live</title>
-<meta name="description" content="Klasemen dan riwayat race VIGIB OBSTACLE — Race Liga, Normal, dan Team, langsung dari dalam game.">
-<meta name="theme-color" content="#100d0a">
+<meta name="description" content="Klasemen dan riwayat race ÆVORA OBSTACLE — Race Liga, Normal, dan Team, langsung dari dalam game.">
+<meta name="theme-color" content="#070605">
 <meta property="og:title" content="VIGIB Race · Klasemen Live">
-<meta property="og:description" content="Klasemen Liga, Race Normal & Team dari VIGIB OBSTACLE.">
+<meta property="og:description" content="Klasemen Liga, Race Normal & Team dari ÆVORA OBSTACLE.">
 <meta property="og:image" content="logo-vg.png">
 <link rel="icon" type="image/png" href="logo-vg.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Cinzel:wght@700;800;900&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&family=Cinzel:wght@600;700;800;900&display=swap" rel="stylesheet">
 <style>
 :root{
   --base:#100d0a; --deep:#0b0907; --card:#221d17; --card2:#2e271d; --line:#584832;
@@ -226,8 +226,10 @@ footer img{width:20px;height:20px}
   .rank{width:24px;height:24px;font-size:11px}
 }
 </style>
+<link rel="stylesheet" href="aevora.css?v=2">
 </head>
 <body>
+<script src="aevora.js?v=2"></script>
 <div class="watermark"></div>
 <canvas id="confetti"></canvas>
 <div class="wrap" id="app"></div>
@@ -235,7 +237,7 @@ footer img{width:20px;height:20px}
 <script>
 (() => {
 "use strict";
-const ROBLOX_GAME_URL = "https://www.roblox.com/games/81010900767282";
+const ROBLOX_GAME_URL = "https://www.roblox.com/games/133594188290114";
 const REFRESH_MS = 30000;
 const MODE_INFO = {
   liga:   { label: "LIGA",   long: "Race Liga",   icon: "trophy" },
@@ -559,7 +561,7 @@ function render() {
     <div class="brand"><img src="logo-vg.png" alt="Logo VG">
       <div><div class="title-row"><h1><span class="gold-text">VIGIB</span> RACE</h1>
         <span class="live ${live ? "on" : "off"}"><span class="dot"></span>${live ? "Live" : (S.error ? "Offline" : "Memuat")}</span></div>
-        <p>Klasemen langsung dari <b class="gold">VIGIB OBSTACLE</b></p></div>
+        <p>Klasemen langsung dari <b class="gold">ÆVORA OBSTACLE</b></p></div>
     </div>
     <nav class="tabs">
       <button class="tab ${S.tab === "standings" ? "active" : ""}" data-tab="standings">${ico("trophy")}Klasemen</button>
@@ -637,7 +639,7 @@ function render() {
   }
 
   html += `
-  <footer class="panel"><div class="f"><img src="logo-vg.png" alt="">© 2026 VIGIB Community · VIGIB OBSTACLE</div>
+  <footer class="panel"><div class="f"><img src="logo-vg.png" alt="">© 2026 AEVORA Community · ÆVORA OBSTACLE</div>
     <div class="f"><span>Diperbarui otomatis tiap 30 detik</span><span>•</span><a href="${ROBLOX_GAME_URL}" target="_blank" rel="noopener">Main di Roblox</a><span>•</span><a href="admin.html">Admin</a></div></footer>
   ${S.toast ? `<div class="panel toast">${ico("sparkles")}<span>${esc(S.toast)}</span></div>` : ""}`;
 

@@ -1,0 +1,142 @@
+/* (2026-11-14) Tema ÆVORA OBSTACLE — mengikuti loading screen map baru:
+   langit badai gelap bercahaya emas, cincin emas berdetik, panel kaca hitam bertepi emas,
+   judul serif klasik, isi Montserrat. File ini dimuat SETELAH <style> bawaan halaman, jadi
+   hanya menimpa tampilan; logika halaman tidak berubah. */
+:root{
+  --base:#070605; --deep:#050404; --card:#141210; --card2:#1f1a14; --line:#4c3d25;
+  --gold:#e8be5c; --hi:#ffe496; --lo:#966822; --ivory:#f6eedc; --muted:#b0a692; --ink:#261a0a;
+  --sage:#9fd7a6; --rose:#e88a7a;
+  --display:'Cinzel', 'Trajan Pro', Georgia, serif;
+  --sans:'Montserrat', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --tepi:rgba(232,190,92,.55); --tepi-redup:rgba(232,190,92,.22);
+}
+html{background:var(--base)}
+body{background:var(--base);background-image:none;font-feature-settings:"lnum" 1}
+
+/* ---------- langit ---------- */
+.aev-sky{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden;
+  background:
+    radial-gradient(ellipse 60% 45% at 50% 46%, rgba(255,196,96,.20) 0%, rgba(150,92,30,.10) 38%, transparent 70%),
+    radial-gradient(ellipse 120% 90% at 50% 50%, #1a130b 0%, #0b0806 55%, #050404 100%)}
+.aev-sky svg.awan{position:absolute;inset:-12% -12%;width:124%;height:124%}
+.aev-sky .lapis1,.aev-sky .lapis1b{animation:aevDrift 120s ease-in-out infinite alternate}
+.aev-sky .lapis1b{mix-blend-mode:screen;opacity:.55}
+.aev-sky .lapis2{animation:aevDrift2 160s ease-in-out infinite alternate;mix-blend-mode:screen;opacity:.9}
+@keyframes aevDrift{from{transform:translate3d(-2%,0,0) scale(1.02)}to{transform:translate3d(2%,-1.5%,0) scale(1.06)}}
+@keyframes aevDrift2{from{transform:translate3d(2%,1%,0)}to{transform:translate3d(-2%,-1%,0)}}
+.aev-sky .vignette{position:absolute;inset:0;background:
+  radial-gradient(ellipse 90% 80% at 50% 50%, transparent 55%, rgba(5,4,4,.45) 100%),
+  linear-gradient(180deg, rgba(5,4,4,.45), transparent 22%, transparent 72%, rgba(5,4,4,.75))}
+.aev-sky .cincin{position:absolute;left:50%;top:46%;width:min(118vmin,1100px);aspect-ratio:1;transform:translate(-50%,-50%);opacity:.55}
+.aev-sky .cincin svg{width:100%;height:100%;overflow:visible}
+.aev-sky .putar{transform-origin:50% 50%;animation:aevPutar 240s linear infinite}
+.aev-sky .putarBalik{transform-origin:50% 50%;animation:aevPutar 320s linear infinite reverse}
+@keyframes aevPutar{to{transform:rotate(360deg)}}
+.aev-sky .bara{position:absolute;bottom:-10px;width:3px;height:3px;border-radius:50%;
+  background:radial-gradient(circle,#ffe7a8 0%,#e8be5c 45%,transparent 75%);box-shadow:0 0 6px 1px rgba(255,200,110,.55);
+  animation:aevNaik linear infinite;opacity:0}
+@keyframes aevNaik{0%{transform:translate3d(0,0,0);opacity:0}10%{opacity:.9}80%{opacity:.6}
+  100%{transform:translate3d(var(--dx,20px),-105vh,0);opacity:0}}
+.watermark{z-index:1;opacity:.045;filter:sepia(1) saturate(1.6) brightness(1.1)}
+.wrap{z-index:2}
+#confetti{z-index:60}
+@media (prefers-reduced-motion:reduce){
+  .aev-sky .lapis1,.aev-sky .lapis1b,.aev-sky .lapis2,.aev-sky .putar,.aev-sky .putarBalik,.aev-sky .bara{animation:none}
+  .aev-sky .bara{display:none}
+}
+
+/* ---------- panel kaca hitam bertepi emas ---------- */
+.panel{
+  background:linear-gradient(180deg,rgba(16,14,12,.82) 0%,rgba(10,9,8,.80) 100%);
+  border:1px solid var(--tepi);border-radius:16px;
+  box-shadow:0 0 0 1px rgba(0,0,0,.55) inset, 0 1px 0 rgba(255,228,150,.08) inset, 0 24px 70px rgba(0,0,0,.55), 0 0 28px rgba(232,190,92,.06);
+  backdrop-filter:blur(10px) saturate(1.1);-webkit-backdrop-filter:blur(10px) saturate(1.1)}
+.gold-text{background:linear-gradient(180deg,#ffecaa 0%,#ecbe58 45%,#c48c30 55%,#ffdc82 100%);-webkit-background-clip:text;background-clip:text;color:transparent}
+.gold-btn,.xbtn.gold-btn{background:linear-gradient(180deg,#ffe8a6 0%,#e8be5c 60%,#c8933c 100%);color:var(--ink);box-shadow:0 4px 16px rgba(232,190,92,.22)}
+.gold-line{background:linear-gradient(90deg,transparent,rgba(232,190,92,.75),transparent)}
+
+/* header: judul serif seperti "ÆVORA OBSTACLE" */
+header.panel{padding:22px 26px}
+header .glow{background:rgba(232,190,92,.12)}
+header.panel::after{content:"";position:absolute;left:26px;right:26px;bottom:0;height:1px;background:linear-gradient(90deg,transparent,rgba(232,190,92,.6),transparent)}
+.brand img{filter:drop-shadow(0 0 20px rgba(232,190,92,.45))}
+.brand h1{font-weight:700;letter-spacing:.04em}
+.brand p{letter-spacing:.02em}
+.brand p b{letter-spacing:.06em}
+
+/* tombol menu: gaya kartu MULAI/FITUR (gelap, tepi emas, kilau miring) */
+.tabs{background:rgba(5,4,4,.6);border:1px solid var(--tepi-redup);border-radius:12px}
+.tab{letter-spacing:.06em;text-transform:uppercase;font-size:12px;font-weight:700;border:1px solid transparent}
+.tab:hover{color:var(--hi);background:rgba(232,190,92,.06);border-color:var(--tepi-redup)}
+.tab.active,.mode.active{
+  color:var(--hi);border:1px solid var(--tepi);
+  background:
+    linear-gradient(110deg,transparent 0%,transparent 64%,rgba(232,190,92,.20) 66%,rgba(232,190,92,.20) 78%,transparent 80%),
+    linear-gradient(180deg,rgba(40,32,20,.95),rgba(18,15,11,.95));
+  box-shadow:0 0 18px rgba(232,190,92,.16), 0 1px 0 rgba(255,228,150,.12) inset}
+.tab.active .ico,.mode.active .ico{color:var(--gold)}
+.modes .panel{border-radius:13px}
+.mode{border:1px solid transparent;font-weight:700}
+.mode .count{background:rgba(232,190,92,.10);color:var(--gold)}
+.mode.active .count{background:rgba(232,190,92,.18);color:var(--hi)}
+
+/* ikon berlian seperti di menu loading screen */
+.stat .badge{transform:rotate(45deg);width:36px;height:36px;border-radius:8px;background:rgba(232,190,92,.07);border:1px solid var(--tepi)}
+.stat .badge .ico{transform:rotate(-45deg)}
+.main-head h2{font-weight:700;letter-spacing:.05em}
+.main-head h2 .ico{color:var(--gold);filter:drop-shadow(0 0 6px rgba(232,190,92,.45))}
+.stat .v{font-weight:700}
+.stat .k{letter-spacing:.12em}
+
+/* isian */
+input,select{background:rgba(5,4,4,.75);border-color:var(--tepi-redup)}
+input:focus,select:focus{border-color:var(--gold);box-shadow:0 0 0 3px rgba(232,190,92,.12)}
+.ibtn{background:rgba(5,4,4,.75);border-color:var(--tepi-redup)}
+
+/* podium */
+.step{border-color:var(--tepi);background:linear-gradient(180deg,rgba(40,32,20,.9),rgba(14,12,10,.4))}
+.step.first{background:linear-gradient(180deg,rgba(232,190,92,.42),rgba(232,190,92,.04));box-shadow:0 0 30px rgba(232,190,92,.18)}
+.av{background:#1a1510;border-color:var(--tepi-redup)}
+.av.big{border-color:var(--gold);box-shadow:0 0 16px rgba(232,190,92,.3)}
+
+/* tabel */
+.tbl-wrap{border-color:var(--tepi-redup);background:rgba(5,4,4,.35)}
+thead{background:rgba(5,4,4,.85)}
+th{border-bottom-color:var(--tepi-redup);letter-spacing:.12em}
+td{border-bottom-color:rgba(232,190,92,.08)}
+tbody tr:hover{background:rgba(232,190,92,.05)}
+.rank.r1{background:linear-gradient(180deg,#ffe8a6,#e8be5c);box-shadow:0 0 14px rgba(232,190,92,.35)}
+.pts{background:rgba(5,4,4,.8);border-color:var(--tepi-redup);font-weight:700}
+
+/* riwayat */
+.sess{background:rgba(8,7,6,.7);border-color:var(--tepi-redup)}
+.sess:hover{border-color:var(--tepi);box-shadow:0 0 22px rgba(232,190,92,.08)}
+.chip{background:rgba(24,20,15,.8);border-color:var(--tepi-redup)}
+.champ{background:rgba(18,15,12,.7);border-color:var(--tepi-redup)}
+.champ.first{border-color:var(--tepi);background:rgba(232,190,92,.09)}
+.tagm{background:rgba(232,190,92,.12)}
+
+footer.panel{border-radius:14px}
+.toast{background:linear-gradient(180deg,rgba(24,20,15,.96),rgba(10,9,8,.96))}
+
+/* ---------- halaman admin ---------- */
+.btn{border-color:var(--tepi-redup);background:rgba(5,4,4,.65)}
+.btn.gold{background:linear-gradient(180deg,#ffe8a6 0%,#e8be5c 60%,#c8933c 100%)}
+.seg{background:rgba(5,4,4,.6);border-color:var(--tepi-redup)}
+.seg button.active{color:var(--hi);border:1px solid var(--tepi);background:linear-gradient(180deg,rgba(40,32,20,.95),rgba(18,15,11,.95))}
+input.in,select.in,input.cell{background:rgba(5,4,4,.75);border-color:var(--tepi-redup)}
+.item{background:rgba(8,7,6,.6);border-color:var(--tepi-redup)}
+.role.super{background:linear-gradient(180deg,#ffe8a6,#e8be5c)}
+.login img{filter:drop-shadow(0 0 22px rgba(232,190,92,.45))}
+
+.stats{grid-template-columns:repeat(4,minmax(0,1fr))}
+@media (max-width:600px){
+  header.panel{padding:16px 14px}
+  .aev-sky .cincin{top:40%;width:150vmin;opacity:.4}
+  .tab{font-size:11px;letter-spacing:.03em}
+  .stats{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .stat{min-width:0}
+  .stat .badge{width:28px;height:28px;margin-right:4px}
+}
+@media (max-width:380px){ .stats{grid-template-columns:minmax(0,1fr)} }
+@media (min-width:601px) and (max-width:900px){ .stats{grid-template-columns:repeat(2,minmax(0,1fr))} }
